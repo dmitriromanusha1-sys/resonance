@@ -12,7 +12,7 @@ var CFG = {
   sfxVol: 60,
   jumpscare: true,
   menuMusic: true,
-  musicTrack: 'music5',
+  musicTrack: 'music2',
   musicVol: 35,
   npcAlerts: true,
   difficulty: 1.0,
@@ -132,7 +132,7 @@ function syncCfgUI() {
     'cfg-difficulty': String(CFG.difficulty || 1.0),
     'cfg-power-drain': String(CFG.powerDrain || 1.0),
     'cfg-ui-scale': CFG.uiScale || 'normal',
-    'cfg-music-track': CFG.musicTrack || 'music5',
+    'cfg-music-track': CFG.musicTrack || 'music2',
   };
   Object.keys(selects).forEach(function(id) {
     var el = document.getElementById(id);
