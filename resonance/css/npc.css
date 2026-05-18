@@ -1,0 +1,11 @@
+/* ═══ NPC BEHAVIOUR ═══ */
+.stalker-wrap.crawler-mode { bottom:-8%!important; left:50%!important; transform:translateX(-50%)!important; opacity:1!important; }
+.stalker-wrap.crawler-mode .stalker-img { width:clamp(200px,45vw,500px)!important; transform:scaleY(0.35) scaleX(1.1)!important; transform-origin:bottom center!important; filter:brightness(0.6) contrast(1.4) saturate(0.7)!important; animation:crawlerPeek 3s ease-in-out infinite!important; }
+@keyframes crawlerPeek { 0%,100%{transform:scaleY(0.32) scaleX(1.1) translateY(0)} 50%{transform:scaleY(0.38) scaleX(1.08) translateY(-3px)} }
+.stalker-wrap.shade-mode .stalker-img { filter:brightness(0.5) contrast(1.5) saturate(0.3) blur(1px)!important; animation:shadePulse 4s ease-in-out infinite!important; }
+@keyframes shadePulse { 0%,100%{opacity:1;filter:brightness(0.5) contrast(1.5) saturate(0.3) blur(1.5px)} 50%{opacity:0.7;filter:brightness(0.3) contrast(1.8) saturate(0.2) blur(0.5px)} }
+.office-door-frame.knocking { animation:doorKnock 0.15s ease-in-out!important; }
+@keyframes doorKnock { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-4px)} 75%{transform:translateX(2px)} }
+.office-door-frame.breaking { animation:doorBreak 0.4s ease-in-out!important; border-right-color:var(--c-danger)!important; }
+@keyframes doorBreak { 0%{transform:translateX(0) rotate(0deg)} 20%{transform:translateX(-8px) rotate(-1deg)} 40%{transform:translateX(12px) rotate(1deg)} 60%{transform:translateX(-6px) rotate(-0.5deg)} 80%{transform:translateX(8px) rotate(0.5deg)} 100%{transform:translateX(0) rotate(0deg)} }
+.shade-hidden-on-map { display:none!important; }

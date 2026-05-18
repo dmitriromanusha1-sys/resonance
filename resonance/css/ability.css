@@ -1,0 +1,12 @@
+/* ═══ ABILITY BAR ═══ */
+.ability-bar-wrap { display:flex; align-items:center; gap:4px; padding:3px 14px; background:var(--c-bg-1); border-top:1px solid var(--c-border-0); flex-shrink:0; min-height:36px; }
+.ability-bar { display:flex; gap:4px; flex-wrap:wrap; }
+.ability-btn { display:flex; align-items:center; gap:3px; padding:4px 8px; background:var(--c-bg-2); border:1px solid var(--c-border-2); color:var(--c-text-2); font-family:var(--f-mono); font-size:9px; cursor:pointer; border-radius:var(--r-sm); transition:all 0.15s; letter-spacing:1px; }
+.ability-btn:hover { border-color:var(--c-accent-hi); color:var(--c-accent-hi); background:var(--c-bg-3); }
+.ability-btn.used { opacity:0.35; cursor:not-allowed; }
+.ab-icon { font-size:11px; }
+.ab-label { font-size:8px; }
+.ab-uses { font-size:8px; color:var(--c-text-2); margin-left:2px; }
+.ability-bar-label { font-size:8px; color:var(--c-text-2); letter-spacing:2px; flex-shrink:0; }
+.skill-tree-open-btn { padding:4px 10px; border:1px solid var(--c-border-2); background:transparent; color:var(--c-text-2); font-family:var(--f-mono); font-size:9px; cursor:pointer; letter-spacing:1px; transition:all 0.15s; margin-left:auto; }
+.skill-tree-open-btn:hover { border-color:var(--c-accent-hi); color:var(--c-accent-hi); }

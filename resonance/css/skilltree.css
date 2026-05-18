@@ -1,0 +1,457 @@
+/* ═══════════════════════════════════════════════════════
+   SKILL TREE — premium redesign
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Screen ── */
+#skilltree-screen {
+  flex-direction:column;
+  background:radial-gradient(ellipse at 20% 50%, #060103 0%, #040102 100%);
+  overflow:hidden; z-index:500;
+}
+
+/* ── Header ── */
+.st-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:0 28px; height:58px; flex-shrink:0;
+  background:linear-gradient(90deg, rgba(204,17,34,0.07) 0%, transparent 60%);
+  border-bottom:1px solid rgba(204,17,34,0.15);
+  position:relative;
+}
+.st-header::after {
+  content:''; position:absolute; bottom:0; left:0; right:0; height:1px;
+  background:linear-gradient(90deg, var(--c-accent-lo) 0%, transparent 50%);
+}
+.st-title {
+  font-family:var(--f-display); font-size:18px;
+  color:var(--c-text-max); letter-spacing:8px;
+}
+.st-title span { color:var(--c-accent-hi); text-shadow:0 0 16px var(--c-glow); }
+
+/* ── Points / level display ── */
+.st-points-display { display:flex; align-items:center; gap:24px; }
+.st-points {
+  font-size:11px; color:var(--c-text-2); letter-spacing:2px;
+}
+.st-points span {
+  font-family:var(--f-display); font-size:26px;
+  color:var(--c-accent-hi); vertical-align:middle;
+  text-shadow:0 0 14px var(--c-glow);
+}
+.st-rebirths { font-size:9px; color:rgba(255,255,255,0.2); letter-spacing:2px; }
+
+.st-level-wrap { display:flex; flex-direction:column; align-items:flex-end; gap:4px; }
+.st-level-label { font-size:7px; color:rgba(255,255,255,0.2); letter-spacing:3px; }
+.st-level-num { color:var(--c-accent-hi); font-family:var(--f-display); }
+.st-xp-nums { font-size:7px; color:rgba(255,255,255,0.2); letter-spacing:1px; font-family:var(--f-mono); }
+.st-xp-bar-track {
+  width:110px; height:3px;
+  background:rgba(255,255,255,0.05);
+  border:1px solid rgba(255,255,255,0.06);
+}
+.st-xp-bar-fill {
+  height:100%; width:0%;
+  background:linear-gradient(90deg, var(--c-accent-lo), var(--c-accent-hi));
+  box-shadow:0 0 6px var(--c-glow);
+  transition:width 0.6s cubic-bezier(0.22,1,0.36,1);
+}
+
+/* ── Header buttons ── */
+.st-rebirth-btn {
+  padding:8px 18px;
+  border:1px solid rgba(255,170,0,0.3);
+  background:transparent; color:rgba(255,170,0,0.7);
+  font-family:var(--f-mono); font-size:9px; letter-spacing:3px;
+  cursor:pointer; transition:all 0.2s;
+}
+.st-rebirth-btn:hover {
+  border-color:rgba(255,170,0,0.7); color:#ffcc44;
+  box-shadow:0 0 12px rgba(255,170,0,0.15);
+}
+.st-rebirth-btn:disabled { opacity:0.2; cursor:not-allowed; }
+
+.st-back-btn {
+  padding:8px 18px;
+  border:1px solid rgba(204,17,34,0.3); background:transparent;
+  color:rgba(255,255,255,0.3); font-family:var(--f-mono);
+  font-size:9px; letter-spacing:3px; cursor:pointer;
+  transition:all 0.2s;
+}
+.st-back-btn:hover {
+  border-color:var(--c-accent); color:var(--c-accent-hi);
+  background:rgba(204,17,34,0.06);
+}
+
+/* ── Tabs ── */
+.st-tabs {
+  display:flex; flex-shrink:0;
+  border-bottom:1px solid rgba(204,17,34,0.1);
+  background:rgba(0,0,0,0.25);
+}
+.st-tab {
+  flex:1; padding:12px 8px; background:transparent; border:none;
+  border-bottom:2px solid transparent;
+  color:rgba(255,255,255,0.22); font-family:var(--f-mono); font-size:9px;
+  cursor:pointer; letter-spacing:3px; text-transform:uppercase;
+  transition:color 0.2s, border-color 0.2s, background 0.2s;
+  position:relative;
+}
+.st-tab:hover {
+  color:rgba(255,255,255,0.5);
+  background:rgba(204,17,34,0.04);
+}
+.st-tab.active {
+  color:var(--c-accent-hi);
+  border-bottom-color:var(--c-accent);
+  background:rgba(204,17,34,0.06);
+  text-shadow:0 0 10px var(--c-glow);
+}
+.st-tab .tab-icon { font-size:16px; display:block; margin-bottom:4px; }
+
+/* ── Content ── */
+.st-content { flex:1; overflow-y:auto; padding:24px; display:none; }
+.st-content.active { display:block; }
+.st-content::-webkit-scrollbar { width:3px; }
+.st-content::-webkit-scrollbar-thumb { background:rgba(204,17,34,0.3); }
+.st-content { scrollbar-width:thin; scrollbar-color:rgba(204,17,34,0.3) transparent; }
+
+/* ── Skill tree layout ── */
+.skill-tree { display:flex; flex-direction:column; gap:0; position:relative; }
+.skill-row {
+  display:flex; align-items:flex-start; justify-content:center;
+  gap:10px; position:relative; margin-bottom:6px;
+}
+/* vertical connector above each row */
+.skill-row::before {
+  content:''; position:absolute; top:-6px; left:50%; transform:translateX(-50%);
+  width:1px; height:6px;
+  background:linear-gradient(180deg, transparent, rgba(204,17,34,0.3));
+}
+.skill-row:first-child::before { display:none; }
+
+/* ── Skill node ── */
+.skill-node {
+  width:150px; flex-shrink:0;
+  background:rgba(0,0,0,0.45);
+  border:1px solid rgba(255,255,255,0.06);
+  border-left:2px solid rgba(255,255,255,0.06);
+  padding:11px 12px;
+  position:relative; cursor:pointer;
+  transition:border-color 0.2s, background 0.2s, box-shadow 0.2s, transform 0.15s;
+}
+
+/* unlockable — can buy */
+.skill-node.unlockable {
+  border-color:rgba(204,17,34,0.3);
+  border-left-color:rgba(204,17,34,0.4);
+}
+.skill-node.unlockable:hover {
+  border-color:var(--c-accent);
+  border-left-color:var(--c-accent-hi);
+  background:rgba(204,17,34,0.06);
+  box-shadow:0 0 16px rgba(204,17,34,0.1), inset 0 0 12px rgba(204,17,34,0.04);
+  transform:translateY(-2px);
+}
+
+/* unlocked */
+.skill-node.unlocked {
+  border-left-color:rgba(204,17,34,0.6);
+  background:rgba(204,17,34,0.04);
+  box-shadow:inset 2px 0 8px rgba(204,17,34,0.06);
+}
+.skill-node.unlocked .skill-cost { display:none; }
+.skill-node.unlocked:hover {
+  background:rgba(204,17,34,0.07);
+  transform:translateY(-1px);
+}
+
+/* maxed */
+.skill-node.maxed {
+  border-left-color:var(--c-accent);
+  background:rgba(204,17,34,0.07);
+  box-shadow:inset 2px 0 12px rgba(204,17,34,0.1), 0 0 8px rgba(204,17,34,0.06);
+}
+
+/* locked */
+.skill-node.locked {
+  opacity:0.22; cursor:pointer;
+}
+.skill-node.locked:hover { opacity:0.35; }
+
+/* story locked */
+.skill-node.story-locked {
+  opacity:0.18; cursor:not-allowed;
+}
+
+/* ── Node contents ── */
+.skill-node-header { display:flex; align-items:center; gap:8px; margin-bottom:7px; }
+.skill-icon {
+  font-size:20px; flex-shrink:0;
+  width:28px; text-align:center; line-height:1;
+}
+.skill-name {
+  font-family:var(--f-display); font-size:8px;
+  color:rgba(255,255,255,0.35); letter-spacing:1.5px;
+  text-transform:uppercase; line-height:1.35;
+}
+.skill-node.unlockable .skill-name { color:rgba(255,255,255,0.55); }
+.skill-node.unlocked .skill-name { color:var(--c-text-max); }
+.skill-node.maxed .skill-name { color:var(--c-accent-hi); }
+
+.skill-desc {
+  font-size:7.5px; color:rgba(255,255,255,0.2);
+  line-height:1.55; margin-bottom:7px;
+  font-family:var(--f-mono);
+}
+.skill-node.unlocked .skill-desc { color:rgba(255,255,255,0.35); }
+.skill-node.maxed .skill-desc { color:rgba(255,255,255,0.4); }
+
+/* Level dots */
+.skill-levels { display:flex; gap:3px; margin-bottom:6px; }
+.skill-lvl-dot {
+  width:12px; height:3px;
+  background:rgba(255,255,255,0.06);
+  border:1px solid rgba(255,255,255,0.08);
+}
+.skill-lvl-dot.filled {
+  background:var(--c-accent);
+  border-color:var(--c-accent-hi);
+  box-shadow:0 0 4px var(--c-glow);
+}
+
+/* Cost */
+.skill-cost {
+  font-family:var(--f-mono); font-size:8px;
+  color:rgba(255,200,50,0.7); letter-spacing:1px;
+}
+.skill-cost.cant-afford { color:rgba(200,50,50,0.7); }
+
+/* Check mark */
+.skill-status {
+  position:absolute; top:7px; right:8px;
+  font-size:9px; color:var(--c-accent);
+  text-shadow:0 0 6px var(--c-glow);
+  opacity:0.8;
+}
+
+/* Horizontal connector between siblings */
+.skill-connector-h {
+  width:10px; height:1px;
+  background:rgba(204,17,34,0.25);
+  align-self:center; margin-top:-20px; flex-shrink:0;
+}
+
+/* ── Left-border tier colors (preserved) ── */
+.skill-node[data-id^="cable"]    { border-left-color:rgba(200,160,0,0.25); }
+.skill-node[data-id^="cable"].unlocked, .skill-node[data-id^="cable"].maxed { border-left-color:#c8a000; }
+.skill-node[data-id^="antenna"]  { border-left-color:rgba(68,136,255,0.25); }
+.skill-node[data-id^="antenna"].unlocked, .skill-node[data-id^="antenna"].maxed { border-left-color:#4488ff; }
+.skill-node[data-id^="pc"]       { border-left-color:rgba(150,80,220,0.3); }
+.skill-node[data-id^="pc"].unlocked, .skill-node[data-id^="pc"].maxed { border-left-color:#9944dd; }
+.skill-node[data-id^="motion"]   { border-left-color:rgba(255,120,40,0.3); }
+.skill-node[data-id^="motion"].unlocked, .skill-node[data-id^="motion"].maxed { border-left-color:#ff7728; }
+
+/* Hunter tiers */
+.skill-node[data-id^="h_snare"].unlocked,.skill-node[data-id^="h_snare"].maxed,
+.skill-node[data-id^="h_noisemaker"].unlocked,.skill-node[data-id^="h_noisemaker"].maxed,
+.skill-node[data-id^="h_barricade"].unlocked,.skill-node[data-id^="h_barricade"].maxed { border-left-color:#a03040; }
+.skill-node[data-id="h_spike_trap"].unlocked,.skill-node[data-id="h_tripwire"].unlocked,
+.skill-node[data-id="h_reinforced_lock"].unlocked,.skill-node[data-id="h_bear_trap"].unlocked,
+.skill-node[data-id="h_smoke_bomb"].unlocked,.skill-node[data-id="h_shotgun"].unlocked,
+.skill-node[data-id="h_spike_trap"].maxed,.skill-node[data-id="h_tripwire"].maxed,
+.skill-node[data-id="h_reinforced_lock"].maxed,.skill-node[data-id="h_bear_trap"].maxed,
+.skill-node[data-id="h_smoke_bomb"].maxed,.skill-node[data-id="h_shotgun"].maxed { border-left-color:#cc7700; }
+.skill-node[data-id="h_electric_fence"].unlocked,.skill-node[data-id="h_alarm_system"].unlocked,
+.skill-node[data-id="h_flare_gun"].unlocked,.skill-node[data-id="h_mine"].unlocked,
+.skill-node[data-id="h_decoy"].unlocked,.skill-node[data-id="h_napalm"].unlocked,
+.skill-node[data-id="h_electric_fence"].maxed,.skill-node[data-id="h_alarm_system"].maxed,
+.skill-node[data-id="h_flare_gun"].maxed,.skill-node[data-id="h_mine"].maxed,
+.skill-node[data-id="h_decoy"].maxed,.skill-node[data-id="h_napalm"].maxed { border-left-color:#ee5522; }
+.skill-node[data-id="h_motion_turret"].unlocked,.skill-node[data-id="h_emp"].unlocked,
+.skill-node[data-id="h_cage"].unlocked,.skill-node[data-id="h_ai_defense"].unlocked,
+.skill-node[data-id="h_perimeter_grid"].unlocked,.skill-node[data-id="h_annihilator"].unlocked,
+.skill-node[data-id="h_motion_turret"].maxed,.skill-node[data-id="h_emp"].maxed,
+.skill-node[data-id="h_cage"].maxed,.skill-node[data-id="h_ai_defense"].maxed,
+.skill-node[data-id="h_perimeter_grid"].maxed,.skill-node[data-id="h_annihilator"].maxed { border-left-color:#ff3322; }
+
+/* Office tiers */
+.skill-node[data-id="cleanup"].unlocked,.skill-node[data-id="cleanup"].maxed,
+.skill-node[data-id="o_sweep"].unlocked,.skill-node[data-id="o_sweep"].maxed,
+.skill-node[data-id="o_patch_walls"].unlocked,.skill-node[data-id="o_patch_walls"].maxed { border-left-color:#661122; }
+.skill-node[data-id="office_restore_2"].unlocked,.skill-node[data-id="o_workbench"].unlocked,
+.skill-node[data-id="o_plywood_door"].unlocked,.skill-node[data-id="cable_1"].unlocked,
+.skill-node[data-id="office_restore_3"].unlocked,.skill-node[data-id="reinforced_door"].unlocked,
+.skill-node[data-id="office_restore_2"].maxed,.skill-node[data-id="o_workbench"].maxed,
+.skill-node[data-id="o_plywood_door"].maxed,.skill-node[data-id="cable_1"].maxed,
+.skill-node[data-id="office_restore_3"].maxed,.skill-node[data-id="reinforced_door"].maxed { border-left-color:#cc1133; }
+.skill-node[data-id="o_server"].unlocked,.skill-node[data-id="o_smart_door"].unlocked,
+.skill-node[data-id="o_bunker"].unlocked,.skill-node[data-id="o_server"].maxed,
+.skill-node[data-id="o_smart_door"].maxed,.skill-node[data-id="o_bunker"].maxed { border-left-color:#ff2233; }
+
+/* Personal tiers */
+.skill-node[data-id="p_attention"].unlocked,.skill-node[data-id="p_steady_hands"].unlocked,
+.skill-node[data-id="p_attention"].maxed,.skill-node[data-id="p_steady_hands"].maxed { border-left-color:#a08844; }
+.skill-node[data-id="p_deep_breath"].unlocked,.skill-node[data-id="p_fast_switch"].unlocked,
+.skill-node[data-id="p_deep_breath"].maxed,.skill-node[data-id="p_fast_switch"].maxed { border-left-color:#cc1133; }
+.skill-node[data-id="p_pattern_memory"].unlocked,.skill-node[data-id="p_iron_will"].unlocked,
+.skill-node[data-id="p_predict"].unlocked,.skill-node[data-id="p_pattern_memory"].maxed,
+.skill-node[data-id="p_iron_will"].maxed,.skill-node[data-id="p_predict"].maxed { border-left-color:#ddaa22; }
+.skill-node[data-id="p_time_stop"].unlocked,.skill-node[data-id="p_meditation"].unlocked,
+.skill-node[data-id="p_foresight"].unlocked,.skill-node[data-id="p_omniscience"].unlocked,
+.skill-node[data-id="p_time_stop"].maxed,.skill-node[data-id="p_meditation"].maxed,
+.skill-node[data-id="p_foresight"].maxed,.skill-node[data-id="p_omniscience"].maxed { border-left-color:#ff2244; }
+
+/* ═══════════════════════════════════════════════════════
+   SKILL MODAL
+   ═══════════════════════════════════════════════════════ */
+#skill-modal { display:none; }
+#skill-modal.active {
+  display:flex; position:fixed; inset:0;
+  align-items:center; justify-content:center; z-index:6000;
+}
+.sm-backdrop {
+  position:absolute; inset:0;
+  background:rgba(0,0,0,0.82);
+  backdrop-filter:blur(4px);
+  cursor:pointer;
+}
+.sm-box {
+  position:relative;
+  background:linear-gradient(160deg, #0f0204 0%, #080102 100%);
+  border:1px solid rgba(204,17,34,0.25);
+  border-top:2px solid var(--c-accent);
+  padding:28px 32px 24px;
+  max-width:420px; width:92%; z-index:1;
+  box-shadow:0 0 60px rgba(204,17,34,0.12), 0 24px 60px rgba(0,0,0,0.9);
+  animation:smAppear 0.22s cubic-bezier(0.22,1,0.36,1);
+}
+@keyframes smAppear {
+  from { transform:translateY(12px) scale(0.97); opacity:0; }
+  to   { transform:translateY(0) scale(1); opacity:1; }
+}
+
+.sm-close {
+  position:absolute; top:12px; right:16px;
+  background:none; border:none; color:rgba(255,255,255,0.2);
+  font-size:14px; cursor:pointer; padding:4px 8px; letter-spacing:1px;
+  transition:color 0.2s;
+}
+.sm-close:hover { color:var(--c-accent-hi); }
+
+/* Header */
+.sm-header { display:flex; align-items:center; gap:16px; margin-bottom:18px; }
+.sm-icon {
+  width:50px; height:50px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:28px;
+  background:rgba(204,17,34,0.06); border:1px solid rgba(204,17,34,0.2);
+}
+.sm-titles { flex:1; }
+.sm-name {
+  font-family:var(--f-display); font-size:14px;
+  color:var(--c-text-max); letter-spacing:3px;
+  text-transform:uppercase; margin-bottom:4px;
+}
+.sm-tier {
+  font-family:var(--f-mono); font-size:8px;
+  color:rgba(255,255,255,0.25); letter-spacing:4px;
+}
+
+/* Level dots */
+.sm-levels { display:flex; align-items:center; gap:5px; margin-bottom:16px; }
+.sm-levels .skill-lvl-dot { width:22px; height:5px; }
+.sm-lvl-text {
+  font-family:var(--f-mono); font-size:8px;
+  color:rgba(255,255,255,0.25); letter-spacing:2px; margin-left:10px;
+}
+
+/* Description */
+.sm-desc {
+  font-size:11px; color:rgba(255,255,255,0.4);
+  line-height:1.85; margin-bottom:20px;
+  padding:14px 16px;
+  background:rgba(255,255,255,0.02);
+  border:1px solid rgba(255,255,255,0.05);
+  border-left:2px solid rgba(204,17,34,0.3);
+  font-family:var(--f-mono);
+}
+
+/* Info grid */
+.sm-info-grid { display:flex; flex-direction:column; gap:0; margin-bottom:22px; }
+.sm-info-item {
+  display:flex; justify-content:space-between; align-items:center;
+  padding:8px 0;
+  border-bottom:1px solid rgba(255,255,255,0.04);
+}
+.sm-info-item:last-child { border-bottom:none; }
+.sm-info-label {
+  font-family:var(--f-mono); font-size:7px;
+  color:rgba(255,255,255,0.2); letter-spacing:3px;
+}
+.sm-info-val {
+  font-size:10px; color:rgba(255,255,255,0.5);
+  text-align:right; max-width:60%; letter-spacing:0.5px;
+}
+
+/* Buttons */
+.sm-btn {
+  display:block; width:100%; padding:13px 20px;
+  font-family:var(--f-display); font-size:11px; letter-spacing:4px;
+  cursor:pointer; border:none; text-align:center; text-transform:uppercase;
+  transition:all 0.2s;
+}
+.sm-btn-buy {
+  background:rgba(204,17,34,0.12);
+  color:var(--c-accent-hi);
+  border:1px solid rgba(204,17,34,0.4);
+}
+.sm-btn-buy:hover {
+  background:rgba(204,17,34,0.22);
+  border-color:var(--c-accent-hi);
+  box-shadow:0 0 20px rgba(204,17,34,0.2);
+}
+.sm-btn-locked {
+  background:rgba(255,255,255,0.02);
+  color:rgba(255,255,255,0.2);
+  border:1px solid rgba(255,255,255,0.07);
+  cursor:not-allowed;
+}
+.sm-maxed {
+  text-align:center; padding:13px 20px;
+  font-family:var(--f-display); font-size:11px; letter-spacing:4px;
+  color:var(--c-accent-hi);
+  border:1px solid rgba(204,17,34,0.4);
+  background:rgba(204,17,34,0.07);
+  text-shadow:0 0 12px var(--c-glow);
+}
+
+/* ═══ REBIRTH MODAL ═══ */
+#rebirth-modal { position:fixed; inset:0; background:rgba(0,0,0,0.88); display:none; align-items:center; justify-content:center; z-index:5000; backdrop-filter:blur(4px); }
+#rebirth-modal.active { display:flex; }
+.rebirth-box {
+  background:linear-gradient(160deg, #0f0204 0%, #080102 100%);
+  border:1px solid rgba(255,170,0,0.3);
+  border-top:2px solid rgba(255,170,0,0.7);
+  padding:36px 44px; text-align:center; max-width:440px;
+  box-shadow:0 0 60px rgba(255,170,0,0.08), 0 24px 60px rgba(0,0,0,0.9);
+}
+.rebirth-title {
+  font-family:var(--f-display); font-size:26px;
+  color:#ffcc44; letter-spacing:4px; margin-bottom:16px;
+  text-shadow:0 0 20px rgba(255,200,0,0.4);
+}
+.rebirth-desc {
+  font-size:11px; color:rgba(255,255,255,0.3);
+  line-height:1.9; margin-bottom:28px;
+  font-family:var(--f-mono);
+}
+.rebirth-desc span { color:#ffcc44; }
+.rebirth-btns { display:flex; gap:12px; justify-content:center; }
+
+/* ═══ SKILL HUD ═══ */
+.skill-hud { display:flex; gap:6px; align-items:center; flex-shrink:0; }
+.skill-hud-icon { font-size:12px; opacity:0.5; }
+.skill-hud-icon.active-skill { opacity:1; filter:drop-shadow(0 0 3px var(--c-accent-hi)); }
+
+/* ═══ OFFICE UPGRADE LAYERS ═══ */
+.office-upgrade-layer { position:absolute; inset:0; pointer-events:none; z-index:8; transition:opacity 0.5s; opacity:0; }
+.office-upgrade-layer.visible { opacity:1; }

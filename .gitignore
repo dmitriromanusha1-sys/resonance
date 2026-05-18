@@ -1,0 +1,18 @@
+# Build output
+dist/
+
+# Windows
+Thumbs.db
+Desktop.ini
+*.lnk
+
+# OS X
+.DS_Store
+
+# Editor
+.vscode/
+*.suo
+*.user
+
+# Logs
+*.log

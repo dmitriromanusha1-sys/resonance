@@ -1,0 +1,1139 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>РЕЗОНАНС — Охранный Пост</title>
+<link rel="stylesheet" href="css/base.css">
+<link rel="stylesheet" href="css/npc.css">
+<link rel="stylesheet" href="css/skilltree.css">
+<link rel="stylesheet" href="css/ability.css">
+<link rel="stylesheet" href="css/settings.css">
+<link rel="stylesheet" href="css/room3d.css">
+<link rel="stylesheet" href="css/mobile.css">
+</head>
+<body>
+
+<div class="scanlines"></div>
+
+<!-- F11 hint overlay -->
+<div id="f11-hint-overlay" style="display:none">
+  <div id="f11-hint-box">
+    <div id="f11-hint-icon">⛶</div>
+    <div id="f11-hint-title">ПОЛНОЭКРАННЫЙ РЕЖИМ</div>
+    <div id="f11-hint-text">Для корректного отображения интерфейса рекомендуется запустить игру в полноэкранном режиме.<br><br>Нажмите <span class="f11-key">F11</span> чтобы переключить режим.</div>
+    <button id="f11-hint-btn" onclick="document.getElementById('f11-hint-overlay').style.display='none'">ПОНЯТНО</button>
+  </div>
+</div>
+
+<div id="title-screen" class="screen active">
+  <!-- Лого + подпись — верхний левый угол -->
+  <div class="tm-logo-block">
+    <div class="tm-logo">РЕЗОНАНС</div>
+    <div class="tm-tagline">ОХРАННЫЙ ПОСТ · ОБЪЕКТ 499</div>
+  </div>
+
+  <!-- Spacer: толкает меню к центру -->
+  <div class="tm-spacer"></div>
+
+  <!-- Вертикальное меню -->
+  <nav class="tm-nav">
+    <button class="tm-btn" style="--i:0" onclick="toggleModeSelect()">
+      <span class="tm-btn-text">НОВАЯ ИГРА</span>
+      <span class="tm-btn-bar"></span>
+    </button>
+
+    <!-- Подменю выбора режима -->
+    <div class="tm-mode-menu" id="tm-mode-menu">
+      <button class="tm-mode-btn" onclick="closeModeSelect();openClassSelect()">
+        <span class="tm-mode-icon">🎯</span>
+        <span class="tm-mode-info">
+          <span class="tm-mode-name">КАМПАНИЯ</span>
+          <span class="tm-mode-desc">15 смен · сюжет · прогрессия</span>
+        </span>
+      </button>
+      <button class="tm-mode-btn" id="endless-mode-btn" onclick="if(!this.disabled){closeModeSelect();startEndlessMode();}">
+        <span class="tm-mode-icon">∞</span>
+        <span class="tm-mode-info">
+          <span class="tm-mode-name">БЕСКОНЕЧНАЯ</span>
+          <span class="tm-mode-desc">выживание · все навыки · рекорд</span>
+        </span>
+      </button>
+    </div>
+
+    <button class="tm-btn" style="--i:1" onclick="openSettings()">
+      <span class="tm-btn-text">НАСТРОЙКИ</span>
+      <span class="tm-btn-bar"></span>
+    </button>
+    <button class="tm-btn" style="--i:2" onclick="openAchievements()">
+      <span class="tm-btn-bar"></span>
+      <span class="tm-btn-text">ДОСТИЖЕНИЯ</span>
+    </button>
+  </nav>
+
+  <!-- Spacer: толкает футер вниз -->
+  <div class="tm-spacer"></div>
+
+  <!-- Версия внизу слева -->
+  <div class="tm-footer">RESONANCE v1.7 · 2026</div>
+  <!-- Endless record badge -->
+  <div id="endless-record-badge" class="endless-record-badge" style="display:none"></div>
+</div>
+
+<!-- LOBBY — level select + skill tree -->
+<div id="class-select-screen" class="screen">
+  <!-- Шапка — стиль как у title screen -->
+  <div class="cs-header">
+    <button class="cs-back" onclick="showScreen('title-screen')">&#8592;</button>
+    <div class="cs-title">ВЫБОР КЛАССА</div>
+    <div class="cs-hint">У каждого свой прогресс</div>
+  </div>
+  <!-- Карточки классов занимают всё пространство -->
+  <div id="class-cards" class="class-cards"></div>
+</div>
+
+<div id="lobby-screen" class="screen">
+  <div class="lobby-header">
+    <button class="lobby-back" onclick="showScreen('title-screen')">&#8592;</button>
+    <div class="lobby-title">КАМПАНИЯ</div>
+    <div class="lobby-level" id="lobby-level">УР.1</div>
+  </div>
+  <div class="lobby-body"></div>
+</div>
+
+<!-- 3D ROOM EXPLORER -->
+<div id="room3d-screen">
+  <button class="r3d-back-btn" onclick="ROOM3D.close()">← ВЫХОД</button>
+  <div class="r3d-title">КОМНАТА ОХРАНЫ</div>
+  <div class="r3d-ambient"></div>
+  <div class="r3d-dust" id="r3d-dust"></div>
+  <div class="r3d-viewport">
+    <div id="room3d-camera" style="transform-style:preserve-3d">
+      <div id="room3d-scene" style="transform-style:preserve-3d"></div>
+    </div>
+  </div>
+  <div class="r3d-hud">
+    <span class="r3d-hud-key">WASD</span> ходить
+    <span class="r3d-hud-key">МЫШЬ</span> смотреть
+    <span class="r3d-hud-key">ESC</span> выход
+  </div>
+  <!-- Player body overlay (arms/hands visible at bottom) -->
+  <div id="r3d-player-body" class="r3d-player-body">
+    <div class="r3d-arm r3d-arm-left"></div>
+    <div class="r3d-arm r3d-arm-right"></div>
+    <div class="r3d-torso"></div>
+  </div>
+</div>
+
+<!-- Level detail modal -->
+<div id="level-modal"></div>
+<!-- Diary modal -->
+<div id="diary-modal"></div>
+<!-- Diary voice recordings -->
+<audio id="diary-voice-1" src="assets/diary_voice_1.mp3" preload="none"></audio>
+<audio id="diary-voice-2" src="assets/diary_voice_2.mp3" preload="none"></audio>
+<audio id="diary-voice-3" src="assets/diary_voice_3.mp3" preload="none"></audio>
+<audio id="diary-voice-4" src="assets/diary_voice_4.mp3" preload="none"></audio>
+<audio id="diary-voice-5" src="assets/diary_voice_5.mp3" preload="none"></audio>
+<audio id="diary-voice-6" src="assets/diary_voice_6.mp3" preload="none"></audio>
+<audio id="diary-voice-7" src="assets/diary_voice_7.mp3" preload="none"></audio>
+<!-- SFX -->
+<audio id="sfx-cam8-npc" src="assets/sfx_cam8_npc.mp3" preload="auto"></audio>
+<audio id="sfx-door-bang" src="assets/sfx_door_bang.mp3" preload="auto"></audio>
+<audio id="sfx-shotgun" src="assets/sfx_shotgun.mp3" preload="auto"></audio>
+<audio id="sfx-cam10-stairs" src="assets/sfx_cam10_stairs.mp3" preload="auto"></audio>
+<audio id="sfx-snap" src="assets/sfx_snap.mp3" preload="auto"></audio>
+<!-- Cam04 ambient loop -->
+<audio id="cam04-amb-1" src="assets/cam04_amb_1.mp3" preload="auto"></audio>
+<audio id="cam04-amb-2" src="assets/cam04_amb_2.mp3" preload="auto"></audio>
+<audio id="cam04-amb-3" src="assets/cam04_amb_3.mp3" preload="auto"></audio>
+<audio id="cam04-amb-4" src="assets/cam04_amb_4.mp3" preload="auto"></audio>
+<!-- Shade appearance sounds -->
+<audio id="sfx-shade-appear-1" src="assets/sfx_shade_1.mp3" preload="auto"></audio>
+<audio id="sfx-shade-appear-2" src="assets/sfx_shade_2.mp3" preload="auto"></audio>
+<audio id="sfx-shade-appear-3" src="assets/sfx_shade_3.mp3" preload="auto"></audio>
+<audio id="sfx-shade-appear-4" src="assets/sfx_shade_4.mp3" preload="auto"></audio>
+<!-- Crawler feeding sounds -->
+<audio id="sfx-crawler-feed-1" src="assets/sfx_crawler_feed_1.mp3" preload="auto"></audio>
+<audio id="sfx-crawler-feed-2" src="assets/sfx_crawler_feed_2.mp3" preload="auto"></audio>
+<!-- Stalker stairs steps -->
+<audio id="sfx-stalker-steps-1" src="assets/sfx_stalker_steps_1.mp3" preload="auto"></audio>
+<audio id="sfx-stalker-steps-2" src="assets/sfx_stalker_steps_2.mp3" preload="auto"></audio>
+<!-- Rumble ambience -->
+<audio id="sfx-rumble-1" src="assets/sfx_rumble_1.mp3" preload="auto"></audio>
+<audio id="sfx-rumble-2" src="assets/sfx_rumble_2.mp3" preload="auto"></audio>
+<audio id="sfx-rumble-3" src="assets/sfx_rumble_3.mp3" preload="auto"></audio>
+<audio id="sfx-rumble-4" src="assets/sfx_rumble_4.mp3" preload="auto"></audio>
+<!-- In Development modal -->
+<div id="in-dev-modal">
+  <div class="lm-backdrop" onclick="document.getElementById('in-dev-modal').classList.remove('active')"></div>
+  <div class="in-dev-box scientist-lore-box military-lore-box">
+    <button class="sm-close" onclick="document.getElementById('in-dev-modal').classList.remove('active')">✕</button>
+    <div class="in-dev-icon">🎖</div>
+    <div class="in-dev-title">ВОЕННЫЙ — В РАЗРАБОТКЕ</div>
+    <div class="scientist-lore-text">
+      <div class="scientist-lore-section">ПРОТОКОЛ «ПЕПЕЛ» (2028 ГОД)</div>
+
+      <div class="scientist-lore-chapter">ОБСТАНОВКА: РУИНЫ И МАРОДЁРЫ</div>
+      <p>Два года после исчезновения Объекта 499. Тот самый «Выброс», которого так боялся Волков, накрыл страну. Электромагнитная волна выжгла не только электронику, но и рассудок миллионов. Гражданская война превратила города в руины.</p>
+      <p>Здание НИИ «Резонанс» превратилось в пустую бетонную скорлупу. Мародёры вынесли всё: от медных кабелей до гермодверей. Остались только голые стены, запах гари и Они.</p>
+      <p>Аномалии без сдерживающего сигнала Волкова стали территориальными хищниками. Сталкер теперь вожак, Ползун превратил подвалы в кислотное гнездо, а Тень — это сам воздух, которым ты дышишь.</p>
+
+      <div class="scientist-lore-chapter">ЗАДАЧА: 15 СМЕН РЕСТАВРАЦИИ</div>
+      <p>Ты — солдат Специального Корпуса Сдерживания. Твой приказ: вернуть контроль над эпицентром и выяснить, что именно произошло здесь два года назад.</p>
+      <p>Каждую смену ты притаскиваешь армейское оборудование: дизель-генераторы, полевые терминалы, камеры на треногах. Ты заново «оживляешь» этого монстра по частям. Докладываешь Штабу о перемещениях сущностей и странных синих вспышках в глубине коридоров.</p>
+      <p>Ты спишь на армейской раскладушке в бывшем офисе охраны, сжимая в руках автомат. Еда — ИРП. Вкус? Соль и пластик. Рассудок защищён армейской дисциплиной и препаратами-блокаторами.</p>
+
+      <div class="scientist-lore-chapter">КОНЦОВКА: «ФИНАЛЬНОЕ ОЧИЩЕНИЕ»</div>
+      <p>Смена 15. 16:00. Восстановление главной антенны завершено. Сигнал пошёл. На мониторах ты увидел то, что скрывали все эти годы: лаборатория Волкова не просто существует — она разрастается под землёй, пожирая саму реальность.</p>
+      <p>Штаб выходит на связь: <em>«Сержант, проект "Резонанс" признан неконтролируемой угрозой класса "Омега". Захват отменяется. Активируйте изделие "Малыш-М"».</em></p>
+      <p>Ты открываешь свинцовый кейс. Внутри — тактический ядерный заряд. Ты не задаёшь вопросов. Ты солдат. Вводишь код подтверждения.</p>
+      <p>— Извините, доктора, — шепчешь ты. — Это единственный способ вылечить эту болезнь.</p>
+
+      <div class="scientist-lore-chapter">ФИНАЛ</div>
+      <p>Ты покидаешь здание на вертолёте в 15:55. В 16:00 над НИИ «Резонанс» расцветает ослепительно белое солнце. Взрыв испаряет бетон, аномалии и саму память о Волковских экспериментах.</p>
+      <p>Здание исчезло. На его месте — стеклянная воронка. Правительство отчитывается об успешном уничтожении «террористической ячейки». Мир спасён... или просто на время изолирован от правды.</p>
+      <p><em>Сцена после титров: на дне воронки среди радиоактивного пепла вспыхивает синий помеховый след. Прозрачная рука поднимает обгоревшую логарифмическую линейку Волкова. Частота 440 Гц всё ещё звучит в эфире.</em></p>
+
+    </div>
+    <div class="lore-select-actions">
+      <button class="btn in-dev-btn" onclick="document.getElementById('in-dev-modal').classList.remove('active')">ЗАКРЫТЬ</button>
+      <button class="btn lore-select-btn" onclick="document.getElementById('in-dev-modal').classList.remove('active');selectClass('military')">▶ ВЫБРАТЬ КЛАСС</button>
+    </div>
+  </div>
+</div>
+
+<div id="scientist-lore-modal">
+  <div class="lm-backdrop" onclick="document.getElementById('scientist-lore-modal').classList.remove('active')"></div>
+  <div class="in-dev-box scientist-lore-box">
+    <button class="sm-close" onclick="document.getElementById('scientist-lore-modal').classList.remove('active')">✕</button>
+    <div class="in-dev-icon">🔬</div>
+    <div class="in-dev-title">УЧЁНЫЙ — В РАЗРАБОТКЕ</div>
+    <div class="scientist-lore-text">
+      <div class="scientist-lore-section">АРХИВ «ОБЪЕКТ 001»: ДНЕВНИК ДОКТОРА ВОЛКОВА (2021)</div>
+
+      <div class="scientist-lore-chapter">ЭТАП 1: ИЗОЛЯЦИЯ</div>
+      <p>Меня заперли в моём собственном кабинете на верхнем уровне. Иронично. Мои коллеги — те, с кем я делил обеды и формулы, — теперь смотрят на меня через объективы камер. Они называют это «полевым испытанием в условиях стресса». Для них я больше не доктор наук. Я — биоматериал.</p>
+      <p>У меня нет оружия, нет современной техники. Только мой старый осциллограф, блокнот и понимание того, что это здание — не просто бетон. Это резонатор.</p>
+
+      <div class="scientist-lore-chapter">ЭТАП 2: ПРОЗРЕНИЕ ЧАСТОТЫ</div>
+      <p>На седьмой день я понял: аномалии не случайны. Сталкер и Ползун — это не монстры. Это «стоячие волны» реальности, застывшие в ужасе 1989 года. Они приходят на звук моего страха.</p>
+      <p>Я перестал бояться. Я начал настраивать оборудование здания на частоту 440 Гц. Я чувствую, как мои пальцы перестают ощущать карандаш, но я начинаю «слышать» движение теней за стеной. Если я не могу выйти через дверь, я выйду через эфир.</p>
+
+      <div class="scientist-lore-chapter">ЭТАП 3: ВЕЛИКАЯ СИНХРОНИЗАЦИЯ</div>
+      <p>Смена 15. Я слышу, как в вентиляции открываются клапаны с газом. «Контора» решила закрыть проект вместе со мной. У них есть протоколы зачистки, но у меня есть Ключ.</p>
+      <p>Вместо того чтобы бежать, я подключаю осциллограф напрямую к распределительному щиту. Я выкручиваю тумблер на максимум.</p>
+      <p><em>«Если материя — это вибрация, то я просто изменю свою тональность».</em></p>
+
+      <div class="scientist-lore-chapter">ФИНАЛ: ПЕРЕХОД И ВЛАСТЬ</div>
+      <p>16:00. Коридор заполняется серым туманом «Леты-9». Я вижу через стекло, как Сталкер замирает, дезориентированный частотой. Я не закрываю дверь. Я открываю её настежь и делаю шаг навстречу.</p>
+      <p>В момент соприкосновения с газом я активирую импульс. Пространство схлопывается.</p>
+      <p>Я не умер. Я провалился сквозь текстуру реальности. Я стою в своей старой подземной лаборатории, которая была запечатана десятилетиями. Здесь чисто, тихо и гудит Главная Установка.</p>
+      <p>Я смотрю на мониторы. Агенты «Конторы» наверху — в панике. Тень покорно сидит у моих ног, как послушный пёс. Сталкер встал на охрану моего нового дома.</p>
+      <p>Я не просто выжил. Я подчинил себе Хаос. Теперь я и есть Резонанс. Я буду ждать здесь. Рано или поздно они пришлют кого-то ещё... И тогда я посмотрю, достоин ли он стать моим преемником.</p>
+      <div class="scientist-lore-status">Статус: Проект «Фокус» переведён в автономный режим. Доктор Волков объявлен «Пропавшим без вести».</div>
+    </div>
+    <div class="lore-select-actions">
+      <button class="btn in-dev-btn" onclick="document.getElementById('scientist-lore-modal').classList.remove('active')">ЗАКРЫТЬ</button>
+      <button class="btn lore-select-btn" onclick="document.getElementById('scientist-lore-modal').classList.remove('active');selectClass('scientist')">▶ ВЫБРАТЬ КЛАСС</button>
+    </div>
+  </div>
+</div>
+<!-- Guard backstory modal -->
+<div id="guard-backstory-modal">
+  <div class="guard-backstory-box">
+    <div class="guard-backstory-header">
+      <span class="guard-backstory-label">🛡 ПРЕДЫСТОРИЯ</span>
+      <span class="guard-backstory-sublabel">ОХРАННИК — БИЛЕТ В ОДИН КОНЕЦ</span>
+    </div>
+    <div class="guard-backstory-body">
+      <p>Тебе 20 лет, и твоя жизнь превратилась в обратный отсчет. На старом смартфоне — бесконечный поток уведомлений.</p>
+      <p class="guard-backstory-sms">«Уважаемый клиент, срок погашения кредита истек. Ваша квартира по адресу <em>ул. Рабочая, д. 12</em> выставлена на торги».</p>
+      <p>Квартира — это громко сказано. Пустая «однушка» с ободранными обоями, где из мебели только матрас на полу. Но это всё, что у тебя есть. А еще есть долги «серьезным людям», которые не присылают СМС — они просто оставляют вмятины на твоей входной двери и обещают в следующий раз оставить их на твоих ребрах.</p>
+      <p>В кармане — последние монеты. На ржавом столбе в самом центре трущоб ты видишь объявление, напечатанное на дешевой бумаге:</p>
+      <div class="guard-backstory-poster">
+        <span>ТРЕБУЕТСЯ ОХРАННИК</span>
+        <span>ЗАКРЫТЫЙ ОБЪЕКТ</span>
+        <span class="guard-backstory-salary">ОПЛАТА: 50 000 руб./смена</span>
+        <span>ОПЫТ НЕ ВАЖЕН</span>
+      </div>
+      <p>Это пахнет подставой. На такую зарплату должна стоять очередь из бывших спецназовцев, а тут — просто номер телефона. Но когда вечером в дверь снова начинают стучать тяжелые ботинки «братков», ты набираешь номер.</p>
+      <div class="guard-backstory-dialogue">
+        <div class="guard-backstory-line guard-line-you">— Алло? По поводу охраны...</div>
+        <div class="guard-backstory-line guard-line-them">— Завтра в 06:00 на повороте к старому тракту. Машина заберет тебя. Документы подпишем на месте.</div>
+      </div>
+      <p>Утром черный внедорожник высаживает тебя у ржавых ворот. Мужчина в дорогом пальто, не глядя в глаза, протягивает планшет с бумагами.</p>
+      <div class="guard-backstory-dialogue">
+        <div class="guard-backstory-line guard-line-them">— Подпиши. Вот аванс за первую неделю. Вот ключи. Твоя задача — сидеть внутри, смотреть в мониторы. Если кто-то попробует войти — просто наблюдай. Главное — не уходи до конца смены.</div>
+      </div>
+      <p>Он сует тебе в руки пачку пятитысячных купюр, прыгает в авто и дает по газам так, будто за ним гонятся черти. Ты остаешься один перед закрытыми воротами.</p>
+      <p class="guard-backstory-closing">Тишина в этом «частном секторе» неестественная. Ни лая собак, ни звука машин. Только ветер гуляет в пустых окнах брошенных домов.</p>
+    </div>
+    <div class="guard-backstory-footer">
+      <button class="btn guard-backstory-btn-back" onclick="closeGuardBackstory()">← НАЗАД</button>
+      <button class="btn guard-backstory-btn-start" onclick="closeGuardBackstoryAndSelect()">НАЧАТЬ ИГРУ →</button>
+    </div>
+  </div>
+</div>
+
+<div id="story-screen" class="screen">
+  <div class="story-text">
+    <p>Объект &laquo;<span>РЕЗОНАНС</span>&raquo; — заброшенный советский комплекс глубоко в лесу.</p><br>
+    <p>В 1987 году здесь проводились <span>секретные эксперименты</span> над биологическим материалом.
+    После аварии объект был законсервирован и забыт.<br>
+    Но что-то внутри <span>не умерло</span>.</p><br>
+    <p>Ты — новый охранник. Твоя задача — <span>10 смен</span>.<br>
+    12 камер. Одна дверь. Фонарик. И существа, которые помнят это место лучше тебя.</p><br>
+    <p>Каждая смена — <span>сложнее предыдущей</span>.<br>
+    Прокачивай оборудование. Изучай врагов. Выживи.</p><br>
+    <p style="color:var(--c-text-0);font-size:11px;margin-top:10px">— Записка на столе, без подписи</p>
+  </div>
+  <button class="btn" onclick="startNight(1)">УРОВЕНЬ 1</button>
+  <button class="btn btn-sm" onclick="showScreen('lobby-screen')">&#8592; НАЗАД</button>
+</div>
+
+<div id="notes-screen" class="screen">
+  <div class="note-title" id="note-title">ЗАПИСКА</div>
+  <div class="note-paper" id="note-text"></div>
+  <button class="btn" id="note-next-btn">ПРОДОЛЖИТЬ</button>
+</div>
+
+<div id="stats-screen" class="screen">
+  <!-- Normal stats (hidden for night 1 narrative) -->
+  <div id="stats-normal-section">
+    <div class="stats-title" id="stat-night">УРОВЕНЬ 1 ЗАВЕРШЁН</div>
+    <div class="stats-xp-box"><div class="stats-xp-label">ПРОГРЕСС</div><div class="stats-xp-row"><span id="stat-level" class="stats-xp-level">УР.1</span><div class="stats-xp-bar-wrap"><div class="stats-xp-bar-track"><div id="stat-xp-bar" class="stats-xp-bar-fill"></div></div><div class="stats-xp-text" id="stat-xp-txt">0/50 XP</div></div><span id="stat-xp-gained" class="stats-xp-gained"></span></div></div><div class="stats-grid">
+      <div class="stat-box"><span class="stat-val" id="stat-cam">0</span><span class="stat-lbl">КАМЕР</span></div>
+      <div class="stat-box"><span class="stat-val" id="stat-door">0</span><span class="stat-lbl">ДВЕРЕЙ</span></div>
+      <div class="stat-box"><span class="stat-val" id="stat-flash">0</span><span class="stat-lbl">ФОНАРИК</span></div>
+      <div class="stat-box"><span class="stat-val" id="stat-close">0</span><span class="stat-lbl">СПАСЕНИЙ</span></div>
+      <div class="stat-box"><span class="stat-val" id="stat-power">0%</span><span class="stat-lbl">ПИТАНИЕ</span></div>
+      <div class="stat-box"><span class="stat-val" id="stat-battery">0%</span><span class="stat-lbl">БАТАРЕЯ</span></div>
+    </div>
+    <button class="btn" id="stat-next-btn">УРОВЕНЬ 2 &#9658;</button>
+    <button class="btn btn-sm" onclick="showScreen('lobby-screen')">МЕНЮ</button>
+  </div>
+
+  <!-- Night 1 narrative section -->
+  <div id="stats-narrative-section" style="display:none">
+    <div class="narrative-box">
+      <div class="narrative-header">
+        <span class="narrative-label">📋 ДНЕВНИК ОХРАННИКА</span>
+        <span class="narrative-sub">УРОВЕНЬ 1 — ПЕРВАЯ СМЕНА</span>
+      </div>
+      <div class="narrative-scroll" id="narrative-scroll">
+
+        <div class="narrative-chapter">СОБЫТИЯ СМЕНЫ</div>
+        <div class="narrative-event">
+          <span class="narrative-time">08:00</span>
+          <p>Ты сидишь в тишине. Твой «офис» — это просто стол и стул. Из защиты — только твои глаза. Ты пересчитываешь аванс. Денег хватит, чтобы закрыть часть долга и купить еды.</p>
+        </div>
+        <div class="narrative-event">
+          <span class="narrative-time">10:00</span>
+          <p>На Камере №1 (въездные ворота) появляется фигура. Ты вздрагиваешь. Это высокий человек в рваном плаще и старом противогазе. В руках у него огромное, грубо заточенное мачете. Он просто стоит и смотрит в объектив. Его глаза под линзами светятся неестественным алым светом.</p>
+          <div class="narrative-thought">«Больной какой-то... Сталкер местный. Наверное, из тех бомжей, что в заброшках живут. Главное, чтобы внутрь не полез». Ты надеешься, что дверь на первый этаж выдержит, хотя на ней даже нет нормального замка.</div>
+        </div>
+        <div class="narrative-event">
+          <span class="narrative-time">18:00</span>
+          <p>Смена окончена. Фигура исчезает на кануне вечера.</p>
+        </div>
+
+        <div class="narrative-chapter">ПОСЛЕ СМЕНЫ</div>
+        <p>На твою карту падает уведомление о пополнении баланса. Ты не можешь поверить своим глазам — они реально заплатили.</p>
+        <p>Ты возвращаешься в город, чувствуя себя богачом среди нищих. Ты сразу переводишь банку часть суммы. На оставшиеся деньги ты идешь не в ресторан, а в строительный магазин.</p>
+        <div class="narrative-purchases">
+          <div class="narrative-purchases-title">ТВОИ ПОКУПКИ:</div>
+          <div class="narrative-purchase-item">🪵 Массивные сосновые доски</div>
+          <div class="narrative-purchase-item">🔩 Пачка длинных саморезов</div>
+          <div class="narrative-purchase-item">🔒 Мощный дверной засов</div>
+          <div class="narrative-purchase-item">🔧 Шуруповерт</div>
+        </div>
+
+        <div class="narrative-thought-block">
+          «Если этот псих в противогазе вернется завтра, я не хочу встречать его с голыми руками. Завтра на втором этаже будет настоящая дверь. Я зубами вцеплюсь в эту работу, потому что за забором этого объекта меня ждет либо тюрьма, либо могила от рук коллекторов. Уж лучше Сталкер...»
+        </div>
+      </div>
+      <div class="narrative-footer">
+        <button class="btn btn-sm narrative-btn-menu" onclick="showScreen('lobby-screen')">МЕНЮ</button>
+        <button class="btn btn-sm narrative-btn-retry" onclick="retryNight()">↺ ЗАНОВО</button>
+        <button class="btn narrative-btn-next" id="narrative-next-btn">УРОВЕНЬ 2 ▶</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Night 1 loss screen -->
+<div id="gameover-night1-screen" class="screen">
+  <div class="go1-box">
+    <div class="go1-title">ВЫ ПРОИГРАЛИ</div>
+    <div class="go1-sub">УРОВЕНЬ 1 · <span id="go1-hour"></span></div>
+    <div class="go1-creature" id="go1-creature"></div>
+    <div class="go1-msg" id="go1-msg"></div>
+    <div class="go1-actions">
+      <button class="btn go1-btn-retry" onclick="retryNight()">↺ ПРОЙТИ ЗАНОВО</button>
+      <button class="btn btn-sm go1-btn-menu" onclick="showScreen('lobby-screen')">ВЫЙТИ В МЕНЮ</button>
+    </div>
+  </div>
+</div>
+
+<div id="game-screen" class="screen">
+  <div class="hud">
+    <div class="hud-title">📹 РЕЗОНАНС</div>
+    <div class="hud-night" id="hud-night" style="display:none">УРОВЕНЬ 1</div>
+    <div class="hud-time" id="hud-time">8:00</div>
+    <div class="hud-power" id="hud-power-wrap" style="display:none;align-items:center;gap:5px">
+      <span>PWR</span>
+      <div class="power-bar"><div class="bar-fill" id="power-bar-fill" style="width:100%;background:#00aa22"></div></div>
+      <span class="pval" id="hud-power">∞</span>
+    </div>
+    <div class="hud-power" style="display:flex;align-items:center;gap:5px" title="Рассудок — главный ресурс. На 0% — проигрыш.">
+      <span style="color:#bb66ff">SAN</span>
+      <div class="power-bar"><div class="bar-fill" id="sanity-bar-fill" style="width:100%"></div></div>
+      <span class="pval" id="hud-sanity" style="color:#bb66ff">100%</span>
+    </div>
+    <div class="hud-level-wrap"><span id="hud-level" class="hud-level-badge">УР.1</span><div class="hud-xp-col"><span id="xp-bar-txt" class="hud-xp-text">0/50 XP</span><div class="hud-xp-bar-track"><div id="xp-bar-fill" class="hud-xp-bar-fill"></div></div></div></div><span id="weather-indicator" class="weather-indicator">🌙 ЯСНО</span><button id="finale-thermo-btn" class="hud-finale-btn finale-btn-thermo" onclick="confirmFinaleThermo()" title="ТЕРМОЯДЕРКА — финальная атака. Уничтожит всё и тебя.">☢ ВЗОРВАТЬ</button><button id="finale-science-btn" class="hud-finale-btn finale-btn-science" onclick="confirmFinaleScience()" title="ЛИКВИДАЦИЯ — научная победа. Усмиряет всех NPC.">🔬 ЛИКВИДАЦИЯ</button><div class="hud-pause-wrap">
+  <button class="hud-pause-btn" id="hud-pause-btn" onclick="togglePauseMenu()" title="Меню паузы">☰</button>
+  <div class="hud-pause-menu" id="hud-pause-menu">
+    <button class="hud-pm-close" onclick="togglePauseMenu()" title="Продолжить">✕</button>
+    <div class="hud-pm-title">ПАУЗА</div>
+    <button class="hud-pm-item" onclick="togglePauseMenu();openSettings()">⚙ НАСТРОЙКИ</button>
+    <button class="hud-pm-item hud-pm-exit" onclick="exitToLobby()">⬅ ГЛАВНОЕ МЕНЮ</button>
+  </div>
+</div>
+  </div>
+  <div class="game-area">
+    <div class="main-view" id="main-view">
+      <div id="cam-tab-hint" style="display:none;position:absolute;bottom:8px;left:50%;transform:translateX(-50%);z-index:30;background:rgba(0,0,0,0.7);border:1px solid #444;color:#888;font-family:var(--f-mono);font-size:9px;letter-spacing:2px;padding:4px 12px;pointer-events:none;white-space:nowrap"><kbd style="background:#222;border:1px solid #555;color:#aaa;padding:1px 5px;border-radius:2px;font-size:9px">TAB</kbd> — вернуться в офис</div>
+      <!-- Кнопка ФОТО — отпугивание сталкера через снимок -->
+      <button id="snap-btn" onclick="snapCamera()" style="display:none;position:absolute;bottom:36px;right:12px;z-index:31;font-family:var(--f-mono);font-size:10px;letter-spacing:2px;padding:6px 14px;cursor:pointer;">📷 ФОТО [C]</button>
+      <!-- Вспышка камеры -->
+      <div id="cam-flash" style="display:none;position:absolute;inset:0;z-index:50;background:white;pointer-events:none;opacity:0;"></div>
+      <div class="noise"></div>
+      <div class="room-view visible office-stage-0" id="room-office"><div class="cam-room office-room"><img class="cam-photo" src="assets/office.png" alt="Охрана"/>
+<!-- Ружьё на стене — показывается когда навык куплен -->
+<div id="wall-gun-wrap" style="display:none;position:absolute;left:18%;top:22%;z-index:15">
+  <div id="wall-gun-zone" onclick="wallGunShoot()" title="РУЖЬЁ — нажми чтобы выстрелить"
+    style="cursor:pointer;text-align:center;user-select:none;transition:transform 0.1s">
+    <div style="font-size:36px;line-height:1;filter:drop-shadow(0 0 6px rgba(255,200,50,0.5))">🔫</div>
+    <div id="wall-gun-ammo" style="font-family:var(--f-mono);font-size:9px;letter-spacing:2px;color:#cc9933;text-shadow:0 0 4px #cc9933;margin-top:2px">● ● ●</div>
+  </div>
+</div>
+<!-- Счётчик электричества — показывается с 13 уровня -->
+<div id="power-meter-wrap" style="display:none;position:absolute;left:49.5%;top:14%;z-index:20">
+  <button onclick="togglePowerMeter()" style="width:100%;background:rgba(0,0,0,0.85);border:1px solid #33ff66;color:#33ff66;font-family:var(--f-mono);font-size:9px;letter-spacing:3px;padding:5px 10px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;box-shadow:0 0 8px rgba(0,255,80,0.2)" id="power-meter-toggle">
+    <span>⚡ ЭЛЕКТРОСЕТЬ</span><span id="pm-toggle-arrow">▼</span>
+  </button>
+  <div id="power-meter" style="background:rgba(0,0,0,0.82);border:1px solid #33ff66;border-top:none;padding:8px 12px;font-family:var(--f-mono);font-size:10px;color:#33ff66;letter-spacing:1px;min-width:160px;box-shadow:0 0 10px rgba(0,255,80,0.2)">
+    <div style="display:flex;justify-content:space-between;margin-bottom:3px"><span>БАТАРЕЯ</span><span id="pm-power" style="color:#33ff66">100%</span></div>
+    <div style="height:3px;background:#0a1a0a;margin-bottom:6px;border-radius:2px"><div id="pm-power-bar" style="height:100%;background:#33ff66;width:100%;border-radius:2px;transition:width 0.5s,background 0.5s"></div></div>
+    <div style="font-size:9px;color:#336633;margin-bottom:4px;letter-spacing:2px">РАСХОД/ТИК:</div>
+    <div style="display:flex;justify-content:space-between;margin-bottom:2px"><span style="color:#668866">База (лампочки)</span><span>−0.15%</span></div>
+    <div id="pm-row-proj" style="display:flex;justify-content:space-between;margin-bottom:2px"><span id="pm-proj-label" style="color:#668866">Прожектор</span><span id="pm-proj-val">−0.35%</span></div>
+    <div id="pm-row-cam" style="display:flex;justify-content:space-between;margin-bottom:2px"><span id="pm-cam-label" style="color:#668866">Камеры/ПК</span><span id="pm-cam-val">−0.20%</span></div>
+    <div id="pm-row-flash" style="display:flex;justify-content:space-between;margin-bottom:2px"><span id="pm-flash-label" style="color:#668866">Фонарик</span><span id="pm-flash-val">−0.25%</span></div>
+    <div id="pm-row-solar" style="display:none;justify-content:space-between;margin-bottom:2px"><span style="color:#aacc66">☀ Солн. панели</span><span style="color:#aacc66">+0.20%</span></div>
+    <div style="border-top:1px solid #1a4a22;margin-top:4px;padding-top:4px;display:flex;justify-content:space-between"><span style="color:#aaaaaa">Итого:</span><span id="pm-total" style="color:#ffcc44">−0.70%</span></div>
+  </div>
+</div>
+<!-- Office restoration SVG layers -->
+<div class="office-svg-layer office-svg-stage-0" id="office-svg-0">
+  <!-- Stage 0: abandoned/dirty office (sepia overlay) -->
+  <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;opacity:0.55;mix-blend-mode:multiply">
+    <rect width="800" height="500" fill="#1a1008"/>
+    <!-- Debris scattered -->
+    <rect x="80" y="350" width="90" height="12" fill="#111" opacity="0.7" transform="rotate(-8,80,350)"/>
+    <rect x="580" y="380" width="60" height="8" fill="#111" opacity="0.6" transform="rotate(5,580,380)"/>
+    <ellipse cx="300" cy="420" rx="40" ry="8" fill="#0a0804" opacity="0.8"/>
+    <rect x="430" y="340" width="30" height="50" fill="#0d0b08" opacity="0.7"/>
+    <!-- Dirt/stains -->
+    <ellipse cx="150" cy="300" rx="55" ry="18" fill="#0a0804" opacity="0.5"/>
+    <ellipse cx="620" cy="260" rx="35" ry="12" fill="#0a0804" opacity="0.4"/>
+  </svg>
+</div>
+<div class="office-svg-layer office-svg-stage-1" id="office-svg-1">
+  <!-- Stage 1: cleaned up, lighter overlay -->
+  <svg viewBox="0 0 800 500" xmlns="http://www.w3.org/2000/svg" style="position:absolute;inset:0;width:100%;height:100%;pointer-events:none;z-index:7;opacity:0.2;mix-blend-mode:multiply">
+    <rect width="800" height="500" fill="#100e0a"/>
+  </svg>
+</div>
+<!-- Stage 2 and 3: no overlay (clean room) -->
+<div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="stalker-wrap" id="sw-stalker-office" style="left:54%;bottom:17%;transform:none"><div class="stalker-eyes" class="eyes-stalker"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker" class="img-stalker"/></div><div class="stalker-wrap" id="sw-crawler-office" style="left:58%;bottom:17%;transform:none"><div class="stalker-eyes" class="eyes-crawler"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler" class="img-crawler"/></div><div class="stalker-wrap" id="sw-shade-office" style="left:52%;bottom:17%;transform:none"><div class="stalker-eyes" class="eyes-shade"></div><img class="stalker-img" src="assets/shade.png" alt="shade" class="img-shade"/></div><div class="fl-overlay" id="fl-office"></div><div class="alert-flash" id="alert-flash"></div></div></div>
+      <div class="room-view" id="room-map-global">
+        <div class="map-wrap">
+          <img class="map-img" src="assets/map_cameras.png" alt="map"/>
+
+          <!-- ═══ МАРКЕРЫ КАМЕР (позиции по map Камеры.png) ═══ -->
+          <!-- ТЕРРИТОРИЯ -->
+          <div class="map-pin" id="map-pin-cam-c3"  onclick="switchRoom('cam-c3')" style="left:68%;top:5%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 03</div></div>
+          <div class="map-pin" id="map-pin-cam-c4"  onclick="switchRoom('cam-c4')" style="left:55%;top:9%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 04</div></div>
+          <div class="map-pin" id="map-pin-cam-c2"  onclick="switchRoom('cam-c2')" style="left:84%;top:25%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 02</div></div>
+          <!-- ПЕРИМЕТР -->
+          <div class="map-pin" id="map-pin-cam-c9"  onclick="switchRoom('cam-c9')" style="left:14%;top:18%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 09</div></div>
+          <div class="map-pin" id="map-pin-cam-c5a" onclick="switchRoom('cam-c5a')" style="left:25%;top:32%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 05А</div></div>
+          <div class="map-pin" id="map-pin-cam-c5b" onclick="switchRoom('cam-c5b')" style="left:21%;top:39%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 05Б</div></div>
+          <div class="map-pin" id="map-pin-cam-c6"  onclick="switchRoom('cam-c6')"  style="left:22%;top:40%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 06</div></div>
+          <div class="map-pin" id="map-pin-cam-c7"  onclick="switchRoom('cam-c7')"  style="left:16%;top:55%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 07</div></div>
+          <div class="map-pin" id="map-pin-cam-c1a" onclick="switchRoom('cam-c1a')" style="left:45%;top:77%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 01А</div></div>
+          <div class="map-pin" id="map-pin-cam-c1b" onclick="switchRoom('cam-c1b')" style="left:38%;top:89%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 01Б</div></div>
+          <!-- ЗДАНИЕ -->
+          <div class="map-pin" id="map-pin-cam-c11" onclick="switchRoom('cam-c11')" style="left:23%;top:38%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 11</div></div>
+          <div class="map-pin" id="map-pin-cam-c10" onclick="switchRoom('cam-c10')" style="left:15%;top:41%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 10</div></div>
+          <div class="map-pin" id="map-pin-cam-c8a" onclick="switchRoom('cam-c8a')" style="left:20%;top:47%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 08А</div></div>
+          <div class="map-pin" id="map-pin-cam-c8b" onclick="switchRoom('cam-c8b')" style="left:22%;top:64%"><div class="map-pin-circle">▶</div><div class="map-pin-lbl">КАМ 08Б</div></div>
+          <!-- ОФИС -->
+          <div class="map-pin map-pin-office" onclick="switchRoom('office')" style="left:20%;top:42%"><div class="map-pin-circle">✓</div><div class="map-pin-lbl">ОФИС</div></div>
+
+          <!-- NPC markers — позиции обновляются через updateMapStalker() -->
+          <div class="map-stalker" id="map-stalker-global-stalker" style="left:20%;top:72%;display:none;transform:translate(-50%,-50%)"><img src="assets/stalker.png" alt="S" class="img-stalker"/></div>
+          <div class="map-stalker" id="map-stalker-global-crawler" style="left:20%;top:72%;display:none;transform:translate(-50%,-50%)"><img src="assets/crawler.png" alt="S" class="img-crawler"/></div>
+          <div class="map-stalker" id="map-stalker-global-shade" style="left:20%;top:72%;display:none;transform:translate(-50%,-50%)"><img src="assets/shade.png" alt="S" class="img-shade"/></div>
+        </div>
+      </div>
+      <div class="room-view" id="room-peek"><div class="cam-room"><img id="peek-photo" class="cam-photo" src="assets/peek_door.png" alt="Выглядывание из-за двери"/><div class="cam-overlay"></div><div class="cam-vignette"></div><div class="cam-hud-t"><span class="cam-label" style="color:#cc6600">ПРОХОД — ЛЕСТНИЦА / ДВЕРЬ</span><span class="cam-dot" style="background:#ff6600"></span></div><div class="cam-hud-b"><span class="cam-rec">⚠ LIVE</span></div><div class="stalker-wrap" id="sw-stalker-peek" style="bottom:0;right:5%;transform:none"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-peek" style="bottom:0;right:5%;transform:none"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-peek" style="bottom:0;right:5%;transform:none"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="fl-overlay" id="fl-peek"></div></div></div>
+
+<div class="room-view" id="room-cam-c1a"><div class="cam-room"><img class="cam-photo" src="assets/cam01_gates_south.png" alt="КАМ 1"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#9a7833">КАМ 01А</span><span class="cam-dot" style="background:#ccaa00"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c1a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c1a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c1a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c1a"></div><div class="fl-overlay" id="fl-cam-c1a"></div></div></div>
+<div class="room-view" id="room-cam-c1b"><div class="cam-room"><img class="cam-photo" src="assets/cam01_building_south.png" alt="КАМ 2"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#9a7833">КАМ 01Б</span><span class="cam-dot" style="background:#ccaa00"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c1b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c1b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c1b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c1b"></div><div class="fl-overlay" id="fl-cam-c1b"></div></div></div>
+<div class="room-view" id="room-cam-c2"><div class="cam-room"><img id="cam-c2-photo" class="cam-photo" src="assets/cam02_west.png" alt="КАМ 3"/><button class="bait-toggle-btn" id="bait-toggle-btn" onclick="toggleBaitPhoto()" title="Переключить вид приманки" style="display:none">🪤</button><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#4a8a6a">КАМ 02</span><span class="cam-dot" style="background:#55aa55"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c2" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c2" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c2" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c2"></div><div class="fl-overlay" id="fl-cam-c2"></div></div></div>
+<div class="room-view" id="room-cam-c3"><div class="cam-room"><img id="cam-c3-photo" class="cam-photo" src="assets/cam03_north.png" alt="КАМ 4"/><button class="bait-toggle-btn bait2-toggle-btn" id="bait2-toggle-btn" onclick="toggleBait2Photo()" title="Использовать приманку" style="display:none">🪤</button><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#4a7aaa">КАМ 03</span><span class="cam-dot" style="background:#3366aa"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c3" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c3" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c3" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c3"></div><div class="fl-overlay" id="fl-cam-c3"></div></div></div>
+<div class="room-view" id="room-cam-c4"><div class="cam-room"><img id="cam-c4-photo" class="cam-photo" src="assets/cam04_backyard.png" alt="КАМ 5"/><button class="bait-toggle-btn bait3-toggle-btn" id="bait3-toggle-btn" onclick="toggleBait3Photo()" title="Использовать приманку" style="display:none">🪤</button><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#8a6644">КАМ 04</span><span class="cam-dot" style="background:#aa6633"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c4" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c4" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c4" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c4"></div><div class="fl-overlay" id="fl-cam-c4"></div></div></div>
+<div class="room-view" id="room-cam-c5a"><div class="cam-room"><img class="cam-photo" src="assets/cam05_north_approach.png" alt="КАМ 6"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#008888">КАМ 05А</span><span class="cam-dot" style="background:#00cccc"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c5a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c5a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c5a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c5a"></div><div class="fl-overlay" id="fl-cam-c5a"></div></div></div>
+<div class="room-view" id="room-cam-c5b"><div class="cam-room"><img class="cam-photo" src="assets/cam05_window_north.png" alt="КАМ 7"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#006655">КАМ 05Б</span><span class="cam-dot" style="background:#00aa77"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c5b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c5b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c5b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c5b"></div><div class="fl-overlay" id="fl-cam-c5b"></div></div></div>
+<div class="room-view" id="room-cam-c6"><div class="cam-room"><img id="cam-c6-photo" class="cam-photo" src="assets/cam06_window_south.png" alt="КАМ 8"/><video id="cam-c6-video" class="cam-photo" src="assets/video5210941639639474799.mp4" autoplay loop muted playsinline style="display:none;object-fit:cover;width:100%;height:100%"></video><button class="cam-video-toggle-btn" id="cam-c6-vtoggle" onclick="toggleCamVideo('c6')" style="display:none" title="Переключить фото/видео">📹</button><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#224488">КАМ 06</span><span class="cam-dot" style="background:#4466cc"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c6" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c6" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c6" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c6"></div><div class="fl-overlay" id="fl-cam-c6"></div></div></div>
+<div class="room-view" id="room-cam-c7"><div class="cam-room"><img id="cam-c7-photo" class="cam-photo" src="assets/cam07_east_entry.png" alt="КАМ 9"/><video id="cam-c7-video" class="cam-photo" src="assets/video5197712934209363319.mp4" autoplay loop muted playsinline style="display:none;object-fit:cover;width:100%;height:100%"></video><button class="cam-video-toggle-btn" id="cam-c7-vtoggle" onclick="toggleCamVideo('c7')" style="display:none" title="Переключить фото/видео">📹</button><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#664400">КАМ 07</span><span class="cam-dot" style="background:#aa6600"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c7" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c7" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c7" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c7"></div><div class="fl-overlay" id="fl-cam-c7"></div></div></div>
+<div class="room-view" id="room-cam-c8a"><div class="cam-room"><img class="cam-photo" src="assets/cam08_floor1a.png" alt="КАМ 10"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#448844">КАМ 08А</span><span class="cam-dot" style="background:#66cc66"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c8a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c8a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c8a" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c8a"></div><div class="fl-overlay" id="fl-cam-c8a"></div></div></div>
+<div class="room-view" id="room-cam-c8b"><div class="cam-room"><img class="cam-photo" src="assets/cam08_floor1b.png" alt="КАМ 11"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#00aa22">КАМ 08Б</span><span class="cam-dot" style="background:#00ff41"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c8b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c8b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c8b" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c8b"></div><div class="fl-overlay" id="fl-cam-c8b"></div></div></div>
+<div class="room-view" id="room-cam-c9"><div class="cam-room"><img id="cam-c9-photo" class="cam-photo" src="assets/cam09_building_entry.png" alt="КАМ 12"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#8888cc">КАМ 09</span><span class="cam-dot" style="background:#aaaaff"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c9" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c9" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c9" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c9"></div><div class="fl-overlay" id="fl-cam-c9"></div></div></div>
+<div class="room-view" id="room-cam-c10"><div class="cam-room"><img id="cam-c10-photo" class="cam-photo" src="assets/cam10_stairs.png" alt="КАМ 13"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#aa2200">КАМ 10</span><span class="cam-dot" style="background:#ff3300"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c10" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c10" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c10" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c10"></div><div class="fl-overlay" id="fl-cam-c10"></div></div></div>
+<div class="room-view" id="room-cam-c11"><div class="cam-room"><img id="cam-c11-photo" class="cam-photo" src="assets/cam11_near_office.png" alt="КАМ 14"/><div class="cam-overlay"></div><div class="cam-lines"></div><div class="cam-vignette"></div><div class="cam-glitch"></div><div class="cam-aberration"></div><div class="cam-flicker"></div><div class="cam-distortion"></div><div class="cam-hud-t"><span class="cam-label" style="color:#aa4488">КАМ 11</span><span class="cam-dot" style="background:#ff66aa"></span></div><div class="cam-hud-b"><span class="cam-rec">REC &#9679;</span></div><div class="stalker-wrap" id="sw-stalker-cam-c11" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/stalker.png" alt="stalker"/></div><div class="stalker-wrap" id="sw-crawler-cam-c11" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/crawler.png" alt="crawler"/></div><div class="stalker-wrap" id="sw-shade-cam-c11" style="bottom:0;left:50%;transform:translateX(-50%)"><div class="stalker-eyes"></div><img class="stalker-img" src="assets/shade.png" alt="shade"/></div><div class="cam-static" id="static-cam-c11"></div><div class="fl-overlay" id="fl-cam-c11"></div></div></div>
+<div class="cam-grid-overlay" id="cam-grid-overlay">
+        <div class="cgo-header"><span class="cgo-title">📹 КАМЕРЫ</span><button class="cgo-close" onclick="closeCamGrid()">✕</button></div>
+        <div class="cgo-body">
+          <div class="cgo-section">🌍 ТЕРРИТОРИЯ</div>
+          <div class="cgo-grid">
+            <button class="cgo-btn" onclick="switchRoom('cam-c2')" id="cbtn-cam-c2"><span>📷</span>КАМ 02</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c3')" id="cbtn-cam-c3"><span>📷</span>КАМ 03</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c4')" id="cbtn-cam-c4"><span>📷</span>КАМ 04</button>
+          </div>
+          <div class="cgo-section">🔭 ПЕРИМЕТР</div>
+          <div class="cgo-grid">
+            <button class="cgo-btn" onclick="switchRoom('cam-c1a')" id="cbtn-cam-c1a"><span>📷</span>КАМ 01А</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c1b')" id="cbtn-cam-c1b"><span>📷</span>КАМ 01Б</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c5a')" id="cbtn-cam-c5a"><span>📷</span>КАМ 05А</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c5b')" id="cbtn-cam-c5b"><span>🪟</span>КАМ 05Б</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c6')" id="cbtn-cam-c6"><span>🪟</span>КАМ 06</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c7')" id="cbtn-cam-c7"><span>🚪</span>КАМ 07</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c9')" id="cbtn-cam-c9"><span>📷</span>КАМ 09</button>
+          </div>
+          <div class="cgo-section">🏠 ЗДАНИЕ</div>
+          <div class="cgo-grid">
+            <button class="cgo-btn" onclick="switchRoom('cam-c8a')" id="cbtn-cam-c8a"><span>📷</span>КАМ 08А</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c8b')" id="cbtn-cam-c8b"><span>📷</span>КАМ 08Б</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c10')" id="cbtn-cam-c10"><span>🪜</span>КАМ 10</button>
+            <button class="cgo-btn" onclick="switchRoom('cam-c11')" id="cbtn-cam-c11"><span>🔒</span>КАМ 11</button>
+          </div>
+          <div class="cgo-section">🗺 КАРТА</div>
+          <div class="cgo-grid">
+            <button class="cgo-btn" onclick="switchMapView('global')"><span>🌐</span>ОБЗОРНАЯ</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- SHADE HATCH TIMER (global overlay) -->
+<div class="shade-timer-overlay" id="shade-timer" style="display:none">
+  <div class="shade-timer-ring" id="shade-timer-ring">
+    <svg viewBox="0 0 200 200">
+      <circle cx="100" cy="100" r="90" fill="none" stroke="rgba(102,68,204,0.15)" stroke-width="6"/>
+      <circle cx="100" cy="100" r="90" fill="none" stroke="#6644cc" stroke-width="6"
+        stroke-dasharray="565.5" stroke-dashoffset="0"
+        id="shade-ring-progress" class="shade-ring-anim"/>
+    </svg>
+    <div class="shade-timer-inner" id="shade-timer-inner">
+      <div class="shade-timer-icon" id="shade-timer-icon">🔒</div>
+      <div class="shade-timer-pct" id="shade-timer-pct">100%</div>
+      <div class="shade-timer-hint" id="shade-timer-hint">ЗАЖМИ</div>
+    </div>
+  </div>
+</div>
+<div class="hide-overlay" id="hide-overlay"><div class="hide-text">🫥 ПРИТАИЛСЯ... ЖДЁШЬ...</div></div>
+<!-- ABILITIES MENU -->
+<div class="abilities-menu" id="abilities-menu" style="display:none">
+  <div class="abm-header">
+    <span class="abm-title">⚡ СПОСОБНОСТИ</span>
+    <button class="abm-close" onclick="toggleAbilitiesMenu()">✕</button>
+  </div>
+  <div class="abm-grid" id="abm-grid"></div>
+  <div class="abm-hint">Нажми на способность чтобы использовать</div>
+</div>
+<!-- ПЕРЕГРУЗКА оверлей -->
+<div id="power-out-overlay" style="display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:4500;pointer-events:none;align-items:flex-start;justify-content:center;padding-top:60px">
+  <div style="background:rgba(20,0,0,0.85);border:2px solid #cc2200;padding:10px 28px;font-family:var(--f-display);font-size:14px;color:#ff4422;letter-spacing:4px;animation:blink 0.6s infinite">⚡ ПЕРЕГРУЗКА — ЗАРЯД ПАНЕЛЕЙ: <span id="power-out-pct">0%</span></div>
+</div>
+<!-- ENDLESS MODE WAVE HUD (скрыт в кампании) -->
+<div id="endless-wave-hud" style="display:none" class="endless-wave-hud"></div>
+<!-- ENDLESS WAVE TRANSITION overlay -->
+<div id="endless-transition" class="endless-transition">
+  <div class="et-inner">
+    <div class="et-survived">ВЫЖИЛ</div>
+    <div class="et-wave">СТАДИЯ 1</div>
+    <div class="et-next">СЛЕДУЮЩАЯ СТАДИЯ</div>
+    <div class="et-stage" style="display:none"></div>
+    <div class="et-extra"></div>
+  </div>
+</div>
+<!-- ENDLESS GAME OVER modal -->
+<div id="endless-gameover" class="endless-gameover">
+  <div class="ego-box">
+    <div class="ego-title">КОНЕЦ</div>
+    <div class="ego-sub">БЕСКОНЕЧНЫЙ РЕЖИМ</div>
+    <div class="ego-wave"></div>
+    <div class="ego-hours"></div>
+    <div class="ego-newrec" style="display:none">🏆 НОВЫЙ РЕКОРД!</div>
+    <div class="ego-record"></div>
+    <div class="ego-actions">
+      <button class="btn" onclick="restartEndlessMode()">↺ ЗАНОВО</button>
+      <button class="btn btn-sm" onclick="exitEndlessMode()">МЕНЮ</button>
+    </div>
+  </div>
+</div>
+<!-- BOTTOM HUD (replaces side panel) -->
+<div class="game-hud-bottom">
+  <button class="ghb-btn ghb-door door-open" id="door-left" onclick="toggleDoor()">🚪 ОТКРЫТА [Q]</button><button class="ghb-btn ghb-hide" id="hide-btn" onclick="toggleHide()" style="display:none">🫥 ПРИТАИТЬСЯ [Q]</button>
+  <button class="ghb-btn ghb-flash" id="flash-btn" onclick="toggleFlash()">🔦 [F]</button>
+  <button class="ghb-btn ghb-projector on" id="projector-btn" onclick="toggleProjector()" style="display:none">🔆 ПРОЖЕКТОР [P]</button>
+  <button class="ghb-btn ghb-peek" id="peek-door-btn" onclick="togglePeek('door')">👁 ВЫГЛЯНУТЬ ЗА ДВЕРЬ [E]</button>
+  
+  <button class="ghb-btn ghb-abilities" id="abilities-toggle" onclick="toggleAbilitiesMenu()">⚡ [V]</button>  <div class="ghb-flash-bar"><div class="ghb-flash-fill" id="flash-bar-fill" style="width:100%"></div></div>
+  <span class="ghb-flash-txt" id="flash-bar-txt">100%</span>
+</div>
+<!-- Creature tracker (compact floating) -->
+<div class="creature-hud" id="creature-hud">
+  <div class="ch-row"><span class="ch-name cn-stalker">S</span><span class="stalker-loc lc-f" id="cs-stalker">???</span></div>
+  <div class="ch-row"><span class="ch-name cn-crawler">C</span><span class="stalker-loc lc-f" id="cs-crawler">???</span></div>
+  <div class="ch-row"><span class="ch-name cn-shade">T</span><span class="stalker-loc lc-f" id="cs-shade">???</span></div>
+</div>
+
+<!-- Окно ДАТЧИКИ (открывается на кнопку 2) -->
+<div id="sensor-panel" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);z-index:200;width:320px;background:#0a0a0a;border:1px solid #00ff41;font-family:var(--f-mono);padding:0;">
+  <div style="display:flex;align-items:center;justify-content:space-between;padding:7px 12px;border-bottom:1px solid #1a3a1a;background:#050f05">
+    <span style="font-size:11px;letter-spacing:3px;color:#00ff41">📡 ДАТЧИКИ ДВИЖЕНИЯ</span>
+    <button onclick="closeSensorPanel()" style="background:none;border:none;color:#555;font-size:14px;cursor:pointer;padding:0 2px">✕</button>
+  </div>
+  <div style="padding:10px 12px;display:flex;flex-direction:column;gap:8px">
+    <div style="font-size:8px;color:#336633;letter-spacing:1px">ПОСЛЕДНИЕ СРАБАТЫВАНИЯ</div>
+    <div id="sensor-feed" style="display:flex;flex-direction:column;gap:3px;min-height:40px;max-height:120px;overflow-y:auto"></div>
+    <div style="height:1px;background:#1a3a1a;margin:2px 0"></div>
+    <div style="font-size:8px;color:#336633;letter-spacing:1px">ТЕКУЩИЕ ПОЗИЦИИ</div>
+    <div style="display:flex;flex-direction:column;gap:4px" id="sensor-positions">
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:#cc3333;width:60px">СТАЛКЕР</span><span style="font-size:9px;color:#aaa" id="sp-stalker">—</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:#cc7700;width:60px">ПОЛЗУН</span><span style="font-size:9px;color:#aaa" id="sp-crawler">—</span></div>
+      <div style="display:flex;align-items:center;gap:8px"><span style="font-size:9px;color:#6644cc;width:60px">ТЕНЬ</span><span style="font-size:9px;color:#aaa" id="sp-shade">—</span></div>
+    </div>
+  </div>
+  <div style="padding:5px 12px;border-top:1px solid #1a3a1a;font-size:7px;color:#334433;letter-spacing:1px">[ 2 ] ЗАКРЫТЬ</div>
+</div>
+<!-- Monitor clickable zone on office photo -->
+<div class="monitor-click-zone" id="monitor-click" onclick="onMonitorClick()" title="Открыть камеры"></div>
+  </div>
+  <div class="ability-bar-wrap"><button class="skill-tree-open-btn" onclick="openSkillTree()">🌿 НАВЫКИ</button></div>
+<div class="event-log" id="event-log">
+    <span class="log-e">Система активирована. 12 камер онлайн. Смена началась.</span>
+  </div>
+</div>
+
+<div id="gameover-screen" class="screen">
+  <img id="go-stalker-img" class="go-stalker" src="assets/stalker.png" alt="S"/>
+  <div class="go-title">КОНЕЦ</div>
+  <div class="go-creature-name" id="go-creature-name">GRASS STALKER</div>
+  <div class="go-msg" id="go-msg"></div>
+  <div class="go-night" id="go-night"></div>
+  <div class="go-stats-txt" id="go-stats"></div>
+  <button class="btn" onclick="retryNight()">&#8635; ПОВТОРИТЬ</button>
+  <button class="btn btn-sm" onclick="showScreen('lobby-screen')">МЕНЮ</button>
+</div>
+
+<div id="win-screen" class="screen">
+  <div class="win-title">ТЫ ВЫЖИЛ!</div>
+  <div class="win-sub" id="win-sub">УРОВЕНЬ 1 ЗАВЕРШЁН</div>
+  <button class="btn" id="next-btn" onclick="nextNight()">СМЕНА 2 &#9658;</button>
+  <button class="btn btn-sm" onclick="showScreen('lobby-screen')">МЕНЮ</button>
+</div>
+
+<div id="powerout-screen" class="screen">
+  <div class="po-title">ПИТАНИЕ ОТКЛЮЧЕНО</div>
+  <div class="po-sub">Темнота... Они идут...</div>
+  <button class="btn btn-sm" onclick="retryNight()">ПОВТОРИТЬ</button>
+</div>
+
+<div id="battery-warning-screen" style="display:none;position:fixed;inset:0;z-index:9999;background:#000;flex-direction:column;align-items:center;justify-content:center;gap:18px;font-family:var(--f-mono)">
+  <div style="font-size:clamp(22px,4vw,44px);color:#555;letter-spacing:6px">НЕТ СИГНАЛА</div>
+  <div style="font-size:13px;color:#444;letter-spacing:2px;text-align:center;max-width:420px">С НОЧИ 13 ОБЪЕКТ РЕЗОНАНС ПЕРЕХОДИТ НА РЕЗЕРВНОЕ ПИТАНИЕ.<br>АККУМУЛЯТОР НЕ УСТАНОВЛЕН — ОБОРУДОВАНИЕ НЕДОСТУПНО.</div>
+  <div style="font-size:12px;color:#ff6600;letter-spacing:1px">▸ ИЗУЧИ НАВЫК «АККУМУЛЯТОР» В ВЕТКЕ ЛИЧНЫЕ</div>
+  <div style="font-size:11px;color:#336633">+1 ОЧКО НАВЫКА НАЧИСЛЕНО</div>
+  <button class="btn" onclick="onBatterySkillBought()" style="margin-top:10px">🔋 ОТКРЫТЬ НАВЫКИ</button>
+</div>
+
+<div id="insane-screen" class="screen">
+  <div class="insane-glitch" id="insane-title">РАССУДОК ИССЯК</div>
+  <div class="insane-sub">Стены сомкнулись. Ты больше не контролируешь себя.</div>
+  <div class="insane-night" id="insane-night"></div>
+  <div class="insane-quote" id="insane-quote"></div>
+  <button class="btn" onclick="retryNight()">&#8635; ПОВТОРИТЬ</button>
+  <button class="btn btn-sm" onclick="showScreen('lobby-screen')">МЕНЮ</button>
+</div>
+
+<div id="jumpscare">
+  <div class="sc-center">
+    <img id="sc-stalker-img" class="sc-stalker" src="assets/stalker.png" alt="S"/>
+    <div class="sc-text" id="sc-text">ОН НАШЁЛ ТЕБЯ</div>
+  </div>
+  <!-- Stalker video screamer (replaces image for stalker only) -->
+  <video id="sc-stalker-video" class="sc-stalker-video" src="assets/stalker_scare.mp4" muted playsinline preload="auto"></video>
+  <!-- Crawler video screamer -->
+  <video id="sc-crawler-video" class="sc-stalker-video" src="assets/screamer_crawler.mp4" muted playsinline preload="auto"></video>
+  <!-- Shade video screamer -->
+  <video id="sc-shade-video" class="sc-stalker-video" src="assets/screamer_shade.mp4" muted playsinline preload="auto"></video>
+</div>
+
+<img id="img-src-stalker" src="assets/stalker.png" style="display:none" alt=""/><img id="img-src-crawler" src="assets/crawler.png" style="display:none" alt=""/><img id="img-src-shade" src="assets/shade.png" style="display:none" alt=""/>
+
+<audio id="audio-menu"    src="assets/menu.mp3"    loop preload="auto"></audio>
+<audio id="audio-game"    src="assets/game.mp3" loop preload="auto"></audio>
+<audio id="audio-win"     src="assets/win.mp3"          preload="auto"></audio>
+<audio id="audio-despair" src="assets/despair.mp3"      preload="auto"></audio>
+<audio id="audio-music5"  src="assets/music5.mp3"  loop preload="auto"></audio>
+
+
+
+<!-- SKILL TREE SCREEN -->
+<div id="skilltree-screen" class="screen">
+  <div class="st-header">
+    <div class="st-title"><span>🌿</span> ДРЕВО НАВЫКОВ</div>
+    <div class="st-points-display">
+      <div class="st-level-wrap"><div class="st-level-label">УРОВЕНЬ: <span id="ls-level-num" class="st-level-num">1</span></div><div class="st-xp-nums"><span id="ls-xp-nums">0/50 XP</span></div><div class="st-xp-bar-track"><div id="ls-xp-bar" class="st-xp-bar-fill"></div></div></div><div class="st-points">ОЧКИ: <span id="st-points-val">0</span> 💎</div>
+      <button class="st-back-btn" onclick="closeSkillTree()">← НАЗАД</button>
+    </div>
+  </div>
+  <div class="st-tabs">
+    <button class="st-tab active" id="st-tab-office" onclick="switchSTTab('office')">
+      <span class="tab-icon">🏠</span>ОФИС
+    </button>
+    <button class="st-tab" id="st-tab-hunter" onclick="switchSTTab('hunter')">
+      <span class="tab-icon">🎯</span>ОХОТНИК
+    </button>
+    <button class="st-tab" id="st-tab-personal" onclick="switchSTTab('personal')">
+      <span class="tab-icon">🧠</span>ЛИЧНЫЕ
+    </button>
+    <button class="st-tab" id="st-tab-arms" onclick="switchSTTab('arms')">
+      <span class="tab-icon">☠</span>ОРУЖЕЙНИК
+    </button>
+    <button class="st-tab" id="st-tab-lab" onclick="switchSTTab('lab')">
+      <span class="tab-icon">🔬</span>ЛАБОРАНТ
+    </button>
+  </div>
+  <div id="st-content-office" class="st-content active"></div>
+  <div id="st-content-hunter" class="st-content"></div>
+  <div id="st-content-personal" class="st-content"></div>
+  <div id="st-content-arms" class="st-content"></div>
+  <div id="st-content-lab" class="st-content"></div>
+</div>
+
+
+<!-- SETTINGS SCREEN -->
+<div id="settings-screen" class="screen">
+  <div class="cfg-header">
+    <div class="cfg-title"><span>⚙</span> НАСТРОЙКИ</div>
+    <div class="cfg-version">RESONANCE v1.7</div>
+    <button class="st-back-btn" onclick="closeSettings()">← НАЗАД</button>
+  </div>
+  <div class="cfg-body">
+    <div class="cfg-nav">
+      <button class="cfg-nav-btn active" id="cfgnav-sound" onclick="switchCfgPanel('sound')"><span class="cfg-nav-icon">🔊</span>ЗВУК</button>
+      <button class="cfg-nav-btn" id="cfgnav-visual" onclick="switchCfgPanel('visual')"><span class="cfg-nav-icon">🎨</span>ГРАФИКА</button>
+      <button class="cfg-nav-btn" id="cfgnav-gameplay" onclick="switchCfgPanel('gameplay')"><span class="cfg-nav-icon">🎮</span>ИГРА</button>
+      <button class="cfg-nav-btn" id="cfgnav-controls" onclick="switchCfgPanel('controls')"><span class="cfg-nav-icon">⌨</span>УПРАВЛЕНИЕ</button>
+      <button class="cfg-nav-btn" id="cfgnav-data" onclick="switchCfgPanel('data')"><span class="cfg-nav-icon">💾</span>ДАННЫЕ</button>
+      <button class="cfg-nav-btn" id="cfgnav-about" onclick="switchCfgPanel('about')"><span class="cfg-nav-icon">ℹ</span>ОБ ИГРЕ</button>
+    </div>
+    <div class="cfg-content">
+
+      <!-- SOUND -->
+      <div class="cfg-panel active" id="cfg-sound">
+        <div class="cfg-section-title">🔊 ЗВУК</div>
+
+        <div class="cfg-sub-title">ГРОМКОСТЬ</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Общая громкость</div></div><div class="cfg-control cfg-slider-wrap"><input type="range" class="cfg-slider" min="0" max="100" value="50" id="cfg-master-vol" oninput="applyMasterVol(this.value)"/><span class="cfg-slider-val" id="cfg-master-vol-val">50%</span></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Громкость музыки</div></div><div class="cfg-control cfg-slider-wrap"><input type="range" class="cfg-slider" min="0" max="100" value="35" id="cfg-music-vol" oninput="applyMusicVol(this.value)"/><span class="cfg-slider-val" id="cfg-music-vol-val">35%</span></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Громкость звуков</div></div><div class="cfg-control cfg-slider-wrap"><input type="range" class="cfg-slider" min="0" max="100" value="60" id="cfg-sfx-vol" oninput="applySfxVol(this.value)"/><span class="cfg-slider-val" id="cfg-sfx-vol-val">60%</span></div></div>
+
+        <div class="cfg-sub-title">МУЗЫКА</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Трек в игре</div><div class="cfg-label-desc">В меню всегда играет MUSIC 5</div></div><div class="cfg-control"><select class="cfg-select" id="cfg-music-track" onchange="applyMusicTrack()"><option value="music1">🎵 MUSIC 1</option><option value="music2">🎵 MUSIC 2 (офис)</option><option value="music3">🎵 MUSIC 3</option><option value="music4">🎵 MUSIC 4</option><option value="music5" selected>🎵 MUSIC 5</option><option value="silence">🔇 Тишина</option></select></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Музыка в меню</div><div class="cfg-label-desc">Воспроизводить музыку на экранах меню</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-menu-music" checked onchange="applyMenuMusic()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+
+        <div class="cfg-sub-title">СОБЫТИЯ</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Звуки событий</div><div class="cfg-label-desc">Выстрелы, мины, стук</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-sfx" checked onchange="applySfxEnabled()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Скример</div><div class="cfg-label-desc">Анимация смерти с резким звуком</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-jumpscare" checked onchange="CFG.jumpscare=this.checked;saveCfg()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Оповещения NPC</div><div class="cfg-label-desc">Звук тревоги когда NPC близко</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-npc-alerts" checked onchange="CFG.npcAlerts=this.checked;saveCfg()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+      </div>
+
+      <!-- VISUAL -->
+      <div class="cfg-panel" id="cfg-visual">
+        <div class="cfg-section-title">🎨 ГРАФИКА</div>
+
+        <div class="cfg-sub-title">ТЕМА</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Цветовая схема</div></div><div class="cfg-control"><div class="cfg-themes"><div class="cfg-theme-swatch active" data-theme="crimson" style="background:#100204;border-color:#880011" onclick="applyTheme('crimson')" title="Красно-белый">🩸</div><div class="cfg-theme-swatch" data-theme="grey" style="background:#0e0e0e;border-color:#555555" onclick="applyTheme('grey')" title="Серо-белый">⬜</div><div class="cfg-theme-swatch" data-theme="green" style="background:#0a1a0a;border-color:#2a7a22" onclick="applyTheme('green')" title="Зелёно-белый">🌿</div><div class="cfg-theme-swatch" data-theme="blue" style="background:#0a0a1a;border-color:#224488" onclick="applyTheme('blue')" title="Сине-белый">🔵</div></div></div></div>
+
+        <div class="cfg-sub-title">АТМОСФЕРА</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">CRT-эффект</div><div class="cfg-label-desc">Линии развёртки на экране</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-crt" checked onchange="applyCRT()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Шум камер</div><div class="cfg-label-desc">Статика и глитчи</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-noise" checked onchange="applyNoise()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Анимации NPC</div><div class="cfg-label-desc">Движение существ на камерах</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-npc-anim" checked onchange="applyNpcAnim()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Паника (мигание)</div><div class="cfg-label-desc">Мигание фона при низком заряде</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-panic-fx" checked onchange="CFG.panicFx=this.checked;saveCfg()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+
+        <div class="cfg-sub-title">ИЗОБРАЖЕНИЕ</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Яркость камер</div></div><div class="cfg-control cfg-slider-wrap"><input type="range" class="cfg-slider" min="20" max="100" value="48" id="cfg-brightness" oninput="applyBrightness(this.value)"/><span class="cfg-slider-val" id="cfg-brightness-val">48%</span></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Высокий контраст</div><div class="cfg-label-desc">Усиленный контраст для слабовидящих</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-contrast" onchange="applyContrast()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+
+        <div class="cfg-sub-title">ИНТЕРФЕЙС</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Размер UI</div><div class="cfg-label-desc">Масштаб панелей и текста</div></div><div class="cfg-control"><select class="cfg-select" id="cfg-ui-scale" onchange="applyUIScale()"><option value="small">Маленький</option><option value="normal" selected>Нормальный</option><option value="large">Большой</option></select></div></div>
+
+        <div class="cfg-sub-title">ЭКРАН</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Полный экран</div><div class="cfg-label-desc">Развернуть на весь экран (F11)</div></div><div class="cfg-control"><button class="cfg-danger-btn cfg-danger-btn--info" onclick="toggleFullscreen()" id="fullscreen-btn">⛶ ПОЛНЫЙ ЭКРАН</button></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Режим телефона</div><div class="cfg-label-desc">Адаптировать интерфейс под мобильный</div></div><div class="cfg-control"><button class="cfg-danger-btn cfg-danger-btn--info" onclick="toggleMobileMode()" id="mobile-mode-btn">📱 МОБИЛЬНЫЙ РЕЖИМ</button></div></div>
+      </div>
+
+      <!-- GAMEPLAY -->
+      <div class="cfg-panel" id="cfg-gameplay">
+        <div class="cfg-section-title">🎮 ИГРОВОЙ ПРОЦЕСС</div>
+
+        <div class="cfg-sub-title">СЛОЖНОСТЬ</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Уровень сложности</div><div class="cfg-label-desc">Скорость и агрессия NPC</div></div><div class="cfg-control"><select class="cfg-select" id="cfg-difficulty" onchange="applyDifficulty()"><option value="0.6">🌿 ЛЕГКО</option><option value="1.0" selected>⚡ НОРМАЛЬНО</option><option value="1.4">💀 СЛОЖНО</option><option value="2.0">☠ КОШМАР</option></select></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Скорость смены</div><div class="cfg-label-desc">Длина игрового часа (сек)</div></div><div class="cfg-control cfg-slider-wrap"><input type="range" class="cfg-slider" min="20" max="90" value="45" id="cfg-night-speed" oninput="applyNightSpeed(this.value)"/><span class="cfg-slider-val" id="cfg-night-speed-val">45с</span></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Расход электричества</div><div class="cfg-label-desc">Скорость расхода энергии (смены 13+)</div></div><div class="cfg-control"><select class="cfg-select" id="cfg-power-drain" onchange="CFG.powerDrain=parseFloat(this.value);saveCfg()"><option value="0.5">🔋 Низкий</option><option value="1.0" selected>⚡ Нормально</option><option value="1.5">🔥 Высокий</option><option value="2.0">☠ Критический</option></select></div></div>
+
+        <div class="cfg-sub-title">ПОВЕДЕНИЕ NPC</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Взлом двери</div><div class="cfg-label-desc">NPC могут ломать дверь</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-door-break" checked onchange="CFG.doorBreak=this.checked;saveCfg()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Стук в дверь</div><div class="cfg-label-desc">Аудио-сигнал когда NPC у двери</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-door-knock" checked onchange="CFG.doorKnock=this.checked;saveCfg()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Случайные события</div><div class="cfg-label-desc">Радио-передачи, аномалии</div></div><div class="cfg-control"><label class="cfg-toggle"><input type="checkbox" id="cfg-random-events" checked onchange="CFG.randomEvents=this.checked;saveCfg()"/><div class="cfg-toggle-track"></div><div class="cfg-toggle-thumb"></div></label></div></div>
+
+        <div class="cfg-sub-title">ПРОЧЕЕ</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Туториал</div><div class="cfg-label-desc">Запустить обучение заново</div></div><div class="cfg-control"><button class="cfg-danger-btn cfg-danger-btn--info" onclick="resetTutorial()">🎓 ПРОЙТИ СНОВА</button></div></div>
+      </div>
+
+      <!-- CONTROLS -->
+      <div class="cfg-panel" id="cfg-controls">
+        <div class="cfg-section-title">⌨ УПРАВЛЕНИЕ</div>
+        <div id="keybind-list"></div>
+        <div class="cfg-hint-box">Кликни на любую клавишу → нажми новую клавишу на клавиатуре<br><span class="cfg-hint-warn">ESC — отменить · Красная клавиша = конфликт с другой</span></div>
+        <div class="cfg-hint-actions"><button class="cfg-danger-btn" onclick="resetKeybinds()">↺ СБРОСИТЬ</button></div>
+      </div>
+
+      <!-- DATA -->
+      <div class="cfg-panel" id="cfg-data">
+        <div class="cfg-section-title">💾 ПРОГРЕСС</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Уровень</div></div><div class="cfg-control cfg-data-val" id="cfg-player-level">1</div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Пройдено уровней</div></div><div class="cfg-control cfg-data-val" id="cfg-nights-count">0</div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Очков навыков</div></div><div class="cfg-control cfg-data-val" id="cfg-skill-pts">0</div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Навыков куплено</div></div><div class="cfg-control cfg-data-val" id="cfg-skills-count">0</div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Записей в дневнике</div></div><div class="cfg-control cfg-data-val" id="cfg-diary-count">0</div></div>
+
+        <div class="cfg-section-title" style="margin-top:20px">📤 СОХРАНЕНИЯ</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Экспорт</div><div class="cfg-label-desc">Скачать файл сохранения</div></div><div class="cfg-control"><button class="cfg-danger-btn cfg-danger-btn--info" onclick="exportSave()">📤 СКАЧАТЬ</button></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Импорт</div><div class="cfg-label-desc">Загрузить сохранение</div></div><div class="cfg-control"><input type="file" id="import-file" accept=".json" style="display:none" onchange="importSave(this)"/><button class="cfg-danger-btn cfg-danger-btn--info" onclick="document.getElementById('import-file').click()">📥 ЗАГРУЗИТЬ</button></div></div>
+
+        <div class="cfg-section-title" style="margin-top:20px">⚠ СБРОС</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Сбросить уровни</div><div class="cfg-label-desc">Только для текущего класса. Навыки сохраняются.</div></div><div class="cfg-control"><button class="cfg-danger-btn" onclick="confirmAction('Сбросить прогресс уровней этого класса?',resetNights)">СБРОСИТЬ</button></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Сбросить навыки</div><div class="cfg-label-desc">Только для текущего класса. Очки вернутся.</div></div><div class="cfg-control"><button class="cfg-danger-btn" onclick="confirmAction('Сбросить навыки этого класса? Очки будут возвращены.',resetSkills)">СБРОСИТЬ</button></div></div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Полный сброс</div><div class="cfg-label-desc">Удалить ВСЁ: все классы, смены, навыки</div></div><div class="cfg-control"><button class="cfg-danger-btn cfg-danger-btn--critical" onclick="confirmAction('УДАЛИТЬ ВЕСЬ ПРОГРЕСС всех классов?',resetAll)">☠ УДАЛИТЬ</button></div></div>
+
+        <div class="cfg-section-title" style="margin-top:20px">🔧 КОНСОЛЬ</div>
+        <div class="cfg-row"><div class="cfg-label"><div class="cfg-label-name">Код доступа</div><div class="cfg-label-desc">Введите код</div></div><div class="cfg-control"><input type="text" id="dev-code-input" class="cfg-dev-input" maxlength="10" placeholder="•••"/></div></div>
+
+      </div>
+
+      <!-- ABOUT -->
+      <div class="cfg-panel" id="cfg-about">
+        <div class="about-hero">
+          <div class="about-logo">РЕЗОНАНС</div>
+          <div class="about-ver">VERSION 1.7</div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-section-title">ОБ ИГРЕ</div>
+          <div class="about-text">
+            <strong>РЕЗОНАНС</strong> — браузерная хоррор-игра в жанре survival, вдохновлённая Five Nights at Freddy's.
+            Вы — охранник дневной смены заброшенного советского комплекса «РЕЗОНАНС», где проводились секретные биологические эксперименты.
+            Ваша задача — продержаться 15 смен, управляя 14 камерами наблюдения, дверью и фонариком,
+            пока три существа-стража пытаются до вас добраться.
+          </div>
+          <div class="about-text">
+            Выберите свой путь: <strong>Охранник</strong> (универсал), <strong>Военный</strong> (☢ Оружейник) или <strong>Учёный</strong> (🔬 Лаборант).
+            Прокачивайте оборудование в пяти ветках навыков, раскрывайте историю через дневник и выберите свою концовку:
+            уничтожить объект термоядерным зарядом или ликвидировать существ научным путём.
+          </div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-section-title">ОСОБЕННОСТИ</div>
+          <div class="about-features">
+            <div class="about-feat">📹 14 камер наблюдения с эффектами помех</div>
+            <div class="about-feat">👾 3 уникальных существа с разным поведением</div>
+            <div class="about-feat">🌿 80+ навыков в 5 ветках прокачки</div>
+            <div class="about-feat">🛡 3 класса персонажа со своими стилями</div>
+            <div class="about-feat">⚔ 2 концовки кампании: ☢ Взрыв и 🔬 Ликвидация</div>
+            <div class="about-feat">📖 15 уровней кампании с сюжетом</div>
+            <div class="about-feat">🎵 5 авторских музыкальных треков</div>
+            <div class="about-feat">💾 Экспорт/импорт сохранений</div>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-section-title">АВТОР</div>
+          <div class="about-author">
+            <div class="about-author-name">Романуша Д.С.</div>
+            <div class="about-author-role">Разработка · Геймдизайн · Сценарий · Программирование</div>
+          </div>
+          <div class="about-text" style="margin-top:10px;font-size:11px;opacity:0.7">
+            Игра разработана как одиночный проект. Все механики, сюжет и визуальное оформление созданы с нуля.
+            Спасибо за то, что играете в РЕЗОНАНС.
+          </div>
+          <div class="about-text" style="margin-top:14px;font-size:12px;">
+            <span style="opacity:0.7">Благодарность за помощь при создании игры:</span><br>
+            <span style="color:#c8a96e;font-weight:600;">Андрей Князев &nbsp;&amp;&nbsp; Александр Зинченко</span>
+          </div>
+        </div>
+
+        <div class="about-section">
+          <div class="about-section-title">ТЕХНОЛОГИИ</div>
+          <div class="about-text">
+            Vanilla JavaScript · HTML5 · CSS3 · Web Audio API<br>
+            Без фреймворков. Без серверов. Работает в браузере.
+          </div>
+        </div>
+
+        <div class="about-footer">
+          © 2026 Романуша Д.С. · Все права защищены
+        </div>
+
+        <div class="about-credits-btn-wrap">
+          <button class="about-credits-btn" onclick="openCredits()">ТИТРЫ</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- Saved indicator -->
+<div class="cfg-saved" id="cfg-saved-toast">✓ СОХРАНЕНО</div>
+
+<!-- Dev console modal -->
+<div id="dev-modal"></div>
+<!-- Achievements modal -->
+<div id="achievements-modal"></div>
+
+<!-- Credits modal -->
+<div id="credits-modal">
+  <div class="crd-backdrop" onclick="closeCredits()"></div>
+  <div class="crd-box">
+    <button class="crd-close" onclick="closeCredits()">✕</button>
+    <div class="crd-noise"></div>
+    <div class="crd-scroll-track">
+      <div class="crd-scroll" id="crd-scroll">
+
+        <div class="crd-logo-block">
+          <div class="crd-game-title">РЕЗОНАНС</div>
+          <div class="crd-game-sub">SURVIVAL HORROR</div>
+          <div class="crd-divider"></div>
+        </div>
+
+        <div class="crd-block">
+          <div class="crd-role">АВТОР</div>
+          <div class="crd-name primary">Романуша Д.С.</div>
+        </div>
+
+        <div class="crd-sep"></div>
+
+        <div class="crd-block">
+          <div class="crd-role">ОСОБАЯ БЛАГОДАРНОСТЬ</div>
+          <div class="crd-name gold">Андрей Князев</div>
+          <div class="crd-name gold">Александр Зинченко</div>
+          <div class="crd-detail">За помощь и поддержку при создании игры</div>
+        </div>
+
+        <div class="crd-sep"></div>
+
+        <div class="crd-block">
+          <div class="crd-role">ВДОХНОВЕНИЕ</div>
+          <div class="crd-name">Five Nights at Freddy's</div>
+          <div class="crd-detail">by Scott Cawthon</div>
+        </div>
+
+        <div class="crd-block">
+          <div class="crd-role">ТЕХНОЛОГИИ</div>
+          <div class="crd-name">Vanilla JavaScript</div>
+          <div class="crd-name">HTML5 Canvas · Web Audio API</div>
+          <div class="crd-name">CSS3 Custom Properties</div>
+          <div class="crd-detail">Без фреймворков. Без серверов.</div>
+        </div>
+
+        <div class="crd-sep"></div>
+
+        <div class="crd-final-block">
+          <div class="crd-final-title">РЕЗОНАНС</div>
+          <div class="crd-final-ver">VERSION 1.7</div>
+          <div class="crd-final-copy">© 2026 Романуша Д.С.</div>
+          <div class="crd-final-copy">Все права защищены</div>
+          <div class="crd-final-thanks">Спасибо, что играете.</div>
+        </div>
+
+      </div>
+    </div>
+    <div class="crd-fade-top"></div>
+    <div class="crd-fade-bot"></div>
+    <div class="crd-skip">НАЖМИ ДЛЯ ПАУЗЫ</div>
+  </div>
+</div>
+<!-- Achievement unlock toast -->
+<div id="ach-toast"></div>
+
+<!-- Tutorial overlay -->
+<div id="tutorial-overlay"></div>
+
+<!-- Skill detail modal -->
+<div id="skill-modal"></div>
+
+<!-- STORY ENDING SCREENS (УРОВЕНЬ 15) -->
+
+<div id="story-ending-run-screen" class="finale-screen story-ending">
+  <div class="finale-title">🏃 ЛОЖНАЯ СВОБОДА</div>
+  <div class="finale-text">
+    Как только часы бьют 16:00, ты активируешь дымовые шашки. Офис заполняется густым едким дымом.<br><br>
+    Ты выпрыгиваешь в окно, перелетаешь через забор, чувствуя невероятную лёгкость в теле. Ты бежишь к лесу, думая, что спасся...<br><br>
+    Из тени деревьев выходят двое в чёрной броне. Электрошокер в шею, и мир гаснет.<br><br>
+    Ты приходишь в себя в белой комнате, привязанный к столу.<br><br>
+    <span class="finale-quote">«Объект 499 продемонстрировал уникальную физическую адаптацию. Начинайте вивисекцию. Посмотрим, что у него вместо сердца».</span><br><br>
+    Ты стал их вечным подопытным.
+  </div>
+  <div class="finale-actions">
+    <button class="btn finale-action-btn" onclick="finishFinale()">В МЕНЮ</button>
+  </div>
+</div>
+
+<div id="story-ending-stay-screen" class="finale-screen story-ending">
+  <div class="finale-title">🏠 ВЕРНОСТЬ ДОЛГУ</div>
+  <div class="finale-text">
+    Ты решаешь верить до конца. Или тебе просто всё равно.<br><br>
+    Ты сидишь в кресле, глядя в мониторы. Снаружи беснуются аномалии — Сталкер и Ползун словно сошли с ума. Группа зачистки не может подойти к двери, потому что монстры рвут их на части.<br><br>
+    Контора понимает, что живым тебя не взять. Они просто активируют систему удалённо.<br><br>
+    Ты слышишь тихий шипящий звук из вентиляции. Твои лёгкие кристаллизуются за 4 секунды.<br><br>
+    Ты застываешь в кресле, как памятник самому себе.<br><br>
+    <span class="finale-quote">На мониторах — только статика.</span>
+  </div>
+  <div class="finale-actions">
+    <button class="btn finale-action-btn" onclick="finishFinale()">В МЕНЮ</button>
+  </div>
+</div>
+
+<div id="story-ending-risk-screen" class="finale-screen story-ending">
+  <div class="finale-title">⚔️ ВСТРЕЧА С ВОЛКОВЫМ</div>
+  <div class="finale-text">
+    Ты схватил обрез, выключил все мониторы и прожекторы. Тьма окутала офис.<br><br>
+    — Хотите моей смерти? Получите её на моих условиях.<br><br>
+    Ты прыгнул к вентиляционному люку в потолке, где обычно пряталась Тень. Она лишь коснулась твоего лица холодным туманом и... расступилась.<br><br>
+    Ты вылез на крышу. Вокруг не было города. Только Абсолютная Пустота и гудящая Установка, светившаяся мертвенно-синим светом.<br><br>
+    Пространство вывернулось наизнанку. Стерильный кафельный пол. Запах озона.<br><br>
+    Перед тобой у пульта стоял изможденный человек в заляпанном халате. На груди — «Д-р Волков. Руководитель проекта "Фокус"».<br><br>
+    Он слабо улыбнулся.<br><br>
+    — Пятнадцать смен... Я ставил на то, что ты сломаешься на десятой. Ты — первый, кто пришёл сюда сам, а не в мешке для трупов.<br><br>
+    Его ладонь была такой же полупрозрачной, как твоя.<br><br>
+    — Добро пожаловать в реальность, 499-й. Нам нужно выключить этот мир, пока он не выключил нас.<br><br>
+    <span class="finale-quote">Твоя история только начинается.</span>
+  </div>
+  <div class="finale-actions">
+    <button class="btn finale-action-btn" onclick="finishFinale()">В МЕНЮ</button>
+  </div>
+</div>
+
+<!-- FINALE SCREENS -->
+
+<!-- Прелюдия термоядерного взрыва — фуллскрин анимация -->
+<div id="finale-thermo-prelude" class="finale-prelude">
+  <div class="prelude-flash"></div>
+  <div class="prelude-shockwave"></div>
+  <div class="prelude-text">☢</div>
+</div>
+
+<!-- Прелюдия научной ликвидации -->
+<div id="finale-science-prelude" class="finale-prelude science">
+  <div class="prelude-flash blue"></div>
+  <div class="prelude-pulse"></div>
+  <div class="prelude-text blue">🔬</div>
+</div>
+
+<div id="finale-thermo-screen" class="finale-screen finale-thermo">
+  <div class="finale-title">☢ ОБЪЕКТ УНИЧТОЖЕН ☢</div>
+  <div class="finale-text">
+    Ты повернул ключ. Объект «РЕЗОНАНС» содрогается.<br><br>
+    Реактор уходит в неконтролируемую цепную реакцию.<br>
+    Резонанс гибнет в ядерном пламени. Все NPC превращаются в пепел.<br>
+    Ты тоже.<br><br>
+    <span class="finale-quote">«Иногда единственный способ выиграть — не дать сыграть никому.»</span>
+  </div>
+  <div id="finale-thermo-stats" class="finale-stats"></div>
+  <div class="finale-actions">
+    <button class="btn finale-action-btn" onclick="finishFinale()">В МЕНЮ</button>
+  </div>
+</div>
+
+<div id="finale-science-screen" class="finale-screen finale-science">
+  <div class="finale-title">🔬 РЕЗОНАНС ИЗОЛИРОВАН 🔬</div>
+  <div class="finale-text">
+    Ты включаешь установку, спроектированную в лаборатории.<br><br>
+    Через мгновение всё затихает.<br>
+    Сталкер растворяется в воздухе. Ползун падает в колодец без движения.<br>
+    Тень развеивается светом твоего рассудка.<br><br>
+    Резонанс остаётся под наблюдением — изучен, побеждён, не сбежал.<br>
+    Ты идёшь домой.<br><br>
+    <span class="finale-quote">«Понять — значит победить.»</span>
+  </div>
+  <div id="finale-science-stats" class="finale-stats"></div>
+  <div class="finale-actions">
+    <button class="btn finale-action-btn" onclick="finishFinale()">В МЕНЮ</button>
+  </div>
+</div>
+
+<script src="js/rng.js"></script>
+<script src="js/polyfills.js"></script>
+<script src="js/assets.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/config.js"></script>
+<script src="js/classes.js"></script>
+<script src="js/levels.js"></script>
+<script src="js/campaign.js"></script>
+<script src="js/weather.js"></script>
+<script src="js/tutorial.js"></script>
+<script src="js/anomalies.js"></script>
+<script src="js/room3d.js"></script>
+<script src="js/skills.js"></script>
+<script src="js/sfx.js"></script>
+<script src="js/settings.js"></script>
+<script src="js/game.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/endless.js"></script>
+<script src="js/main.js"></script>
+<script>
+(function(){
+  var overlay = document.getElementById('f11-hint-overlay');
+  if(overlay && !localStorage.getItem('f11HintSeen')){
+    overlay.style.display = 'flex';
+    document.getElementById('f11-hint-btn').addEventListener('click', function(){
+      localStorage.setItem('f11HintSeen','1');
+      overlay.style.display = 'none';
+    });
+  }
+})();
+</script>
+</body>
+</html>
+
+
+

@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(Start-Process *index.html*)",
+      "PowerShell(Get-ChildItem *)",
+      "PowerShell(Get-Content *)",
+      "PowerShell(Copy-Item *assets*)",
+      "PowerShell(Select-String *)",
+      "PowerShell(Test-Path *)"
+    ]
+  }
+}
