@@ -16,19 +16,19 @@ function showScreen(id){
   if(typeof AUDIO!=='undefined'&&!AUDIO.muted){
     var trackToPlay = null;
 
-    // МЕНЮ — всегда MUSIC 5, независимо от настроек игрока
+    // МЕНЮ, выбор класса, выбор уровня — всегда трек меню
     var menuScreens = ['title-screen','lobby-screen','story-screen','notes-screen','stats-screen','class-select-screen','settings-screen'];
     if(menuScreens.indexOf(id) >= 0){
-      trackToPlay = 'music5';
+      trackToPlay = 'menu';
     }
-    // ИГРА — пользовательский выбор, иначе MUSIC 2 по умолчанию (офисный трек)
+    // ИГРА — пользовательский выбор, иначе трек игры по умолчанию
     else if(id === 'game-screen'){
       var picked = (typeof CFG !== 'undefined' && CFG.musicTrack) ? CFG.musicTrack : null;
       if(picked === 'silence'){
         if(typeof stopAllAudio === 'function') stopAllAudio();
         return;
       }
-      trackToPlay = picked || 'music2';
+      trackToPlay = picked || 'game';
     }
     // Победа / поражение
     else if(id === 'win-screen')      trackToPlay = 'music3';
