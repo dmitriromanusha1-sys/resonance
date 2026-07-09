@@ -48,55 +48,11 @@ $cssFiles = @(
 )
 
 # ── Функция: базовая минификация ─────────────────────────────────────────
-function Minify-JS($text) {
-  # Убираем однострочные комментарии (не трогаем URL в строках)
-  # Простая замена: строки начинающиеся с // после пробелов
-  $lines = $text -split "`n"
-  $out = [System.Collections.Generic.List[string]]::new()
-  $inBlock = $false
-  foreach ($line in $lines) {
-    # Убираем блочные комментарии /* ... */ (однострочные)
-    if (!$inBlock) {
-      # начало блочного комментария
-      if ($line -match '/\*' -and $line -notmatch '\*/') {
-        $inBlock = $true
-        # отрезаем до /*
-        $before = ($line -split '/\*')[0].Trim()
-        if ($before) { $out.Add($before) }
-        continue
-      }
-      # блочный комментарий на одной строке /* ... */
-      $line = [regex]::Replace($line, '/\*.*?\*/', '')
-      # однострочный комментарий // (вне строк — грубо)
-      if ($line -match '^\s*//') { continue }
-      $trimmed = $line.Trim()
-      if ($trimmed) { $out.Add($trimmed) }
-    } else {
-      if ($line -match '\*/') {
-        $inBlock = $false
-        $after = ($line -split '\*/')[1].Trim()
-        if ($after) { $out.Add($after) }
-      }
-      # внутри блочного комментария — пропускаем
-    }
-  }
-  # Склеиваем строки
-  $joined = $out -join ' '
-  # Сжимаем лишние пробелы
-  $joined = [regex]::Replace($joined, '\s{2,}', ' ')
-  return $joined
-}
-
-function Minify-CSS($text) {
-  # Убираем комментарии /* ... */
-  $text = [regex]::Replace($text, '/\*[\s\S]*?\*/', '', [System.Text.RegularExpressions.RegexOptions]::Singleline)
-  # Убираем переносы и лишние пробелы
-  $text = [regex]::Replace($text, '\s{2,}', ' ')
-  $text = [regex]::Replace($text, '\s*([:;,{}])\s*', '$1')
-  $text = [regex]::Replace($text, ';}', '}')
-  $text = $text.Trim()
-  return $text
-}
+# Минификация отключена: самодельный regex-парсер комментариев ломал JS
+# (вырезал часть кода, приняв её за комментарий), из-за чего в собранной
+# игре не работали кнопки. Файлы просто конкатенируются как есть.
+function Minify-JS($text) { return $text }
+function Minify-CSS($text) { return $text }
 
 # ── Сборка JS ────────────────────────────────────────────────────────────
 Write-Host "[2/5] Сборка JS..." -ForegroundColor Cyan

@@ -1,5 +1,8 @@
 # Build output
 dist/
+release/
+Resonance-v1.7.1.zip
+Resonance-v1.7.1/
 
 # Windows
 Thumbs.db
