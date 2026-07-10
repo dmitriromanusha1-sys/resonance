@@ -334,8 +334,15 @@ function playTrack(name,vol){
   // Block menu track while game is active
   if(name==='menu' && typeof G!=='undefined' && G.gameActive) return;
   Object.keys(TRACK_META).forEach(function(k){var a=AUDIO[k];if(a&&a.pause){a.pause();a.currentTime=0;}});
-  var t=AUDIO[name];if(!t||AUDIO.muted)return;
-  t.volume=vol!==undefined?vol:AUDIO.volume;t.currentTime=0;var p=t.play();if(p)p.catch(function(){});
+  var t=AUDIO[name];
+  // Трек недоступен (файл удалён/не найден) — откатываемся на game.mp3, чтобы не остаться без музыки
+  if((!t||!t.src||t.error) && name!=='game' && AUDIO.game){
+    name='game';t=AUDIO.game;
+  }
+  if(!t||AUDIO.muted)return;
+  t.volume=vol!==undefined?vol:AUDIO.volume;t.currentTime=0;var p=t.play();if(p)p.catch(function(){
+    if(name!=='game' && AUDIO.game){playTrack('game',vol);}
+  });
   AUDIO.current=name;updateTrackUI();
 }
 function stopAllAudio(){Object.keys(TRACK_META).forEach(function(k){var a=AUDIO[k];if(a&&a.pause){a.pause();a.currentTime=0;}});AUDIO.current=null;updateTrackUI();}
