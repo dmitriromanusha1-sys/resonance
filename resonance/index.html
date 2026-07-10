@@ -84,6 +84,29 @@
   <div id="endless-record-badge" class="endless-record-badge" style="display:none"></div>
 </div>
 
+<!-- Дисклеймер — показывается один раз при первом запуске -->
+<div id="disclaimer-modal" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(0,0,0,0.85);align-items:center;justify-content:center;">
+  <div style="max-width:480px;margin:0 20px;padding:28px 24px;background:#141414;border:1px solid #402020;border-radius:6px;box-shadow:0 0 40px rgba(200,0,0,0.15);">
+    <div style="font-size:13px;letter-spacing:2px;color:#c8384a;font-weight:700;margin-bottom:14px;">ДИСКЛЕЙМЕР</div>
+    <div style="font-size:13px;line-height:1.6;color:#b8b8b8;">
+      Все персонажи, организации и события, изображённые в игре РЕЗОНАНС, являются художественным вымыслом.
+      Любое сходство с реальными людьми, компаниями, местами или событиями, живыми или нет, случайно
+      и не является намеренным.
+    </div>
+    <button onclick="document.getElementById('disclaimer-modal').style.display='none';try{localStorage.setItem('resonance_disclaimer_seen','1');}catch(e){}" style="margin-top:20px;width:100%;padding:10px;background:#402020;color:#e8e8e8;border:1px solid #603030;border-radius:4px;font-size:12px;letter-spacing:1px;cursor:pointer;">ПОНЯТНО</button>
+  </div>
+</div>
+<script>
+(function(){
+  var seen=false;
+  try{seen=localStorage.getItem('resonance_disclaimer_seen')==='1';}catch(e){}
+  if(!seen){
+    var m=document.getElementById('disclaimer-modal');
+    if(m){m.style.display='flex';}
+  }
+})();
+</script>
+
 <!-- LOBBY — level select + skill tree -->
 <div id="class-select-screen" class="screen">
   <!-- Шапка — стиль как у title screen -->
