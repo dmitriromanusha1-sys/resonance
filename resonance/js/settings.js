@@ -12,7 +12,7 @@ var CFG = {
   sfxVol: 60,
   jumpscare: true,
   menuMusic: true,
-  musicTrack: 'music2',
+  musicTrack: 'game',
   musicVol: 35,
   npcAlerts: true,
   difficulty: 1.0,
@@ -61,6 +61,10 @@ function loadCfg() {
       Object.assign(CFG, saved);
     }
   } catch(e) {}
+  // Миграция со старой схемы music1-5 на упрощённую (только menu/game/silence)
+  if (CFG.musicTrack && CFG.musicTrack !== 'menu' && CFG.musicTrack !== 'game' && CFG.musicTrack !== 'silence') {
+    CFG.musicTrack = 'game';
+  }
   applyCfgAll();
 }
 
@@ -132,7 +136,7 @@ function syncCfgUI() {
     'cfg-difficulty': String(CFG.difficulty || 1.0),
     'cfg-power-drain': String(CFG.powerDrain || 1.0),
     'cfg-ui-scale': CFG.uiScale || 'normal',
-    'cfg-music-track': CFG.musicTrack || 'music2',
+    'cfg-music-track': CFG.musicTrack || 'game',
   };
   Object.keys(selects).forEach(function(id) {
     var el = document.getElementById(id);
